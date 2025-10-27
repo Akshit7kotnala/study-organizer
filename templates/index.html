@@ -1,0 +1,48 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row mb-4">
+  <div class="col-md-8">
+    <h1 class="display-4">
+      <i class="bi bi-calendar-range me-2"></i>Academic Years
+    </h1>
+    <p class="lead text-muted">
+      Select a year to view and manage your study documents
+    </p>
+  </div>
+  <div class="col-md-4 text-end">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-files me-2"></i>Total Documents
+        </h5>
+        <h2 class="text-primary">{{ total_docs }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if years %}
+<div class="row g-4">
+  {% for y in years %}
+  <div class="col-md-6 col-lg-3">
+    <a href="{{ url_for('year_view', year=y) }}" class="text-decoration-none">
+      <div class="card year-card h-100 border-primary">
+        <div class="card-body text-center">
+          <i class="bi bi-folder-fill text-primary" style="font-size: 3rem"></i>
+          <h4 class="card-title mt-3">{{ human_year_label(y) }}</h4>
+          <p class="text-muted">View documents</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle-fill me-2"></i>
+  No documents uploaded yet.
+  <a href="{{ url_for('upload') }}" class="alert-link"
+    >Upload your first document</a
+  >
+  to get started!
+</div>
+{% endif %} {% endblock %}

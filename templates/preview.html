@@ -1,0 +1,104 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <h1 class="display-5">
+      <i class="bi bi-eye me-2 text-primary"></i>Preview: {{
+      doc.original_filename }}
+    </h1>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong><i class="bi bi-book me-1"></i>Subject:</strong>
+          <span class="badge bg-primary">{{ doc.subject }}</span>
+        </p>
+        <p class="mb-2">
+          <strong><i class="bi bi-tags me-1"></i>Tags:</strong>
+          {% if doc.tags %} {% for tag in doc.tag_list() %}
+          <span class="badge bg-secondary me-1">{{ tag }}</span>
+          {% endfor %} {% else %}
+          <span class="text-muted">No tags</span>
+          {% endif %}
+        </p>
+      </div>
+      <div class="col-md-6 text-end">
+        <p class="mb-2">
+          <strong><i class="bi bi-hdd me-1"></i>Size:</strong> {{
+          doc.format_size() }}
+        </p>
+        <p class="mb-2">
+          <strong><i class="bi bi-calendar-event me-1"></i>Uploaded:</strong> {{
+          doc.upload_date.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+      </div>
+    </div>
+    <div class="mt-3">
+      <a
+        class="btn btn-primary"
+        href="{{ url_for('download', doc_id=doc.id) }}"
+      >
+        <i class="bi bi-download me-2"></i>Download
+      </a>
+      <a
+        class="btn btn-outline-secondary"
+        href="{{ url_for('year_view', year=doc.year) }}"
+      >
+        <i class="bi bi-arrow-left me-2"></i>Back to {{ doc.year }} Year
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    {% if previewable and view_type == 'image' %}
+    <div class="text-center">
+      <img
+        src="{{ file_url }}"
+        class="img-fluid rounded shadow"
+        alt="{{ doc.original_filename }}"
+        style="max-height: 800px"
+      />
+    </div>
+    {% elif previewable and view_type == 'pdf' %}
+    <div class="ratio ratio-16x9" style="height: 800px">
+      <embed
+        src="{{ file_url }}"
+        type="application/pdf"
+        width="100%"
+        height="100%"
+      />
+    </div>
+    {% elif previewable and view_type == 'text' %}
+    <div
+      class="bg-light p-4 rounded"
+      style="max-height: 600px; overflow-y: auto"
+    >
+      <pre
+        class="mb-0"
+        style="
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          font-family: 'Courier New', monospace;
+        "
+      >
+{{ text_content }}</pre
+      >
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-file-earmark-x text-muted" style="font-size: 5rem"></i>
+      <p class="lead mt-3">Preview not available for this file type</p>
+      <p class="text-muted">
+        Click the download button above to view the file on your device
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

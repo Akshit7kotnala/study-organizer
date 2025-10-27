@@ -1,0 +1,425 @@
+{% extends "base.html" %} {% block title %}{{ collection.name }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <!-- Collection Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      <div
+        class="collection-icon-large me-3"
+        style="background-color: {{ collection.color }}20; color: {{ collection.color }};"
+      >
+        <i class="{{ collection.icon }} fs-1"></i>
+      </div>
+      <div>
+        <h2 class="mb-1">{{ collection.name }}</h2>
+        {% if collection.description %}
+        <p class="text-muted mb-0">{{ collection.description }}</p>
+        {% endif %}
+        <small class="text-muted">
+          <i class="bi bi-file-earmark me-1"></i>
+          {{ documents|length }} document{{ 's' if documents|length != 1 else ''
+          }}
+        </small>
+      </div>
+    </div>
+    <div>
+      <button
+        class="btn btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#addDocumentsModal"
+      >
+        <i class="bi bi-plus-circle me-1"></i>Add Documents
+      </button>
+      <a
+        href="{{ url_for('edit_collection', collection_id=collection.id) }}"
+        class="btn btn-secondary"
+      >
+        <i class="bi bi-pencil me-1"></i>Edit
+      </a>
+      <a href="{{ url_for('collections') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+  </div>
+
+  {% if documents %}
+  <div class="row g-4">
+    {% for doc in documents %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm document-card">
+        <div class="card-body">
+          <!-- Thumbnail -->
+          <div class="document-thumbnail mb-3">
+            {% if doc.thumbnail_filename %}
+            <img
+              src="{{ url_for('thumbnail_file', filename=doc.thumbnail_filename) }}"
+              alt="Thumbnail"
+              class="img-fluid rounded"
+            />
+            {% else %}
+            <div class="thumbnail-placeholder">
+              <i class="bi bi-file-earmark-text fs-1 text-muted"></i>
+            </div>
+            {% endif %}
+          </div>
+
+          <h6
+            class="card-title text-truncate"
+            title="{{ doc.original_filename }}"
+          >
+            {{ doc.original_filename }}
+          </h6>
+
+          <div class="text-muted small mb-2">
+            <span class="badge bg-primary">{{ doc.year }}</span>
+            <span class="badge bg-secondary">{{ doc.subject }}</span>
+          </div>
+
+          {% if doc.tags %}
+          <div class="mb-2">
+            {% for tag in doc.tags.split(',')[:3] %}
+            <span class="badge bg-light text-dark me-1">
+              <i class="bi bi-tag-fill me-1"></i>{{ tag.strip() }}
+            </span>
+            {% endfor %} {% if doc.tags.split(',')|length > 3 %}
+            <span class="badge bg-light text-dark"
+              >+{{ doc.tags.split(',')|length - 3 }} more</span
+            >
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <div class="text-muted small mb-3">
+            <i class="bi bi-calendar me-1"></i>
+            {{ doc.upload_date.strftime('%b %d, %Y') }}
+          </div>
+
+          <div class="btn-group w-100" role="group">
+            <a
+              href="{{ url_for('preview_document', doc_id=doc.id) }}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="bi bi-eye"></i>
+            </a>
+            <a
+              href="{{ url_for('download_document', doc_id=doc.id) }}"
+              class="btn btn-sm btn-outline-success"
+            >
+              <i class="bi bi-download"></i>
+            </a>
+            <form
+              method="POST"
+              action="{{ url_for('remove_from_collection', collection_id=collection.id, doc_id=doc.id) }}"
+              style="display: inline"
+              onsubmit="return confirm('Remove this document from the collection?');"
+            >
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-inbox display-1 text-muted"></i>
+    <h4 class="mt-3 text-muted">No Documents in This Collection</h4>
+    <p class="text-muted">Add documents to organize them in this collection</p>
+    <button
+      class="btn btn-primary mt-3"
+      data-bs-toggle="modal"
+      data-bs-target="#addDocumentsModal"
+    >
+      <i class="bi bi-plus-circle me-1"></i>Add Documents
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Documents Modal -->
+<div class="modal fade" id="addDocumentsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Documents to {{ collection.name }}</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form
+          id="addDocumentsForm"
+          method="POST"
+          action="{{ url_for('add_to_collection', collection_id=collection.id) }}"
+        >
+          <div class="mb-3">
+            <input
+              type="text"
+              class="form-control"
+              id="searchDocuments"
+              placeholder="Search documents..."
+            />
+          </div>
+          <div id="documentsList" class="document-selection-list">
+            <!-- Documents will be loaded here -->
+            <div class="text-center py-3">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="submit" form="addDocumentsForm" class="btn btn-primary">
+          <i class="bi bi-plus-circle me-1"></i>Add Selected
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.collection-icon-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.document-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.document-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.document-thumbnail {
+    height: 200px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.document-thumbnail img {
+    max-height: 100%;
+    width: auto;
+    object-fit: cover;
+}
+
+.thumbnail-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.document-selection-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.document-selection-item {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.document-selection-item:hover {
+    background-color: #f8f9fa;
+}
+
+.document-selection-item input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    /* Header adjustments */
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .d-flex.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .collection-icon-large {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1rem;
+    }
+
+    .collection-icon-large i {
+        font-size: 2rem !important;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Button group */
+    .d-flex.justify-content-between > div {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .d-flex.justify-content-between > div .btn {
+        width: 100%;
+    }
+
+    /* Document cards */
+    .col-md-6, .col-lg-4 {
+        padding: 0.5rem;
+    }
+
+    .document-thumbnail {
+        height: 150px;
+    }
+
+    .btn-group {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .btn-group .btn,
+    .btn-group form {
+        flex: 1;
+        min-width: 60px;
+    }
+
+    /* Modal improvements */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .document-selection-list {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .collection-icon-large {
+        width: 50px;
+        height: 50px;
+    }
+
+    .collection-icon-large i {
+        font-size: 1.5rem !important;
+    }
+
+    .document-thumbnail {
+        height: 120px;
+    }
+
+    .card-body {
+        padding: 0.75rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style><script>
+  // Load available documents when modal opens
+  document.getElementById('addDocumentsModal').addEventListener('show.bs.modal', function() {
+      loadAvailableDocuments();
+  });
+
+  function loadAvailableDocuments() {
+      const documentsList = document.getElementById('documentsList');
+
+      // Fetch all user documents
+      fetch('/api/documents')
+          .then(response => response.json())
+          .then(data => {
+              if (data.documents && data.documents.length > 0) {
+                  renderDocuments(data.documents);
+              } else {
+                  documentsList.innerHTML = '<p class="text-muted text-center">No documents available</p>';
+              }
+          })
+          .catch(error => {
+              console.error('Error loading documents:', error);
+              documentsList.innerHTML = '<p class="text-danger text-center">Error loading documents</p>';
+          });
+  }
+
+  function renderDocuments(documents) {
+      const documentsList = document.getElementById('documentsList');
+      const currentDocIds = {{ documents|map(attribute='id')|list|tojson }};
+
+      // Filter out documents already in collection
+      const availableDocs = documents.filter(doc => !currentDocIds.includes(doc.id));
+
+      if (availableDocs.length === 0) {
+          documentsList.innerHTML = '<p class="text-muted text-center">All your documents are already in this collection</p>';
+          return;
+      }
+
+      let html = '';
+      availableDocs.forEach(doc => {
+          html += `
+              <div class="document-selection-item">
+                  <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="document_ids" value="${doc.id}" id="doc${doc.id}">
+                      <label class="form-check-label w-100" for="doc${doc.id}">
+                          <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                  <strong>${doc.original_filename}</strong>
+                                  <br>
+                                  <small class="text-muted">
+                                      <span class="badge bg-primary">${doc.year}</span>
+                                      <span class="badge bg-secondary">${doc.subject}</span>
+                                  </small>
+                              </div>
+                          </div>
+                      </label>
+                  </div>
+              </div>
+          `;
+      });
+
+      documentsList.innerHTML = html;
+  }
+
+  // Search documents
+  document.getElementById('searchDocuments').addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const items = document.querySelectorAll('.document-selection-item');
+
+      items.forEach(item => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+      });
+  });
+</script>
+{% endblock %}

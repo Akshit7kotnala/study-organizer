@@ -1,0 +1,371 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <h1 class="display-5">
+      <i class="bi bi-cloud-upload-fill me-2 text-primary"></i>Upload Documents
+    </h1>
+    <p class="text-muted">
+      Upload your study materials with metadata - supports multiple files and
+      drag & drop!
+    </p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+          <!-- Drag and Drop Zone -->
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-file-earmark-arrow-up me-1"></i>Select Files *
+            </label>
+            <div id="dropZone" class="drop-zone">
+              <i
+                class="bi bi-cloud-upload"
+                style="font-size: 3rem; color: #667eea"
+              ></i>
+              <p class="mt-3 mb-2"><strong>Drag & drop files here</strong></p>
+              <p class="text-muted">or</p>
+              <label for="file" class="btn btn-primary">
+                <i class="bi bi-folder2-open me-2"></i>Browse Files
+              </label>
+              <input
+                class="d-none"
+                type="file"
+                id="file"
+                name="file"
+                multiple
+                required
+              />
+              <p class="text-muted mt-3 mb-0">
+                Supported: PDF, Word, Excel, PowerPoint, Images, etc. Max 50MB
+                per file
+              </p>
+            </div>
+          </div>
+
+          <!-- Selected Files List -->
+          <div id="filesList" class="mb-4" style="display: none">
+            <h6>
+              <i class="bi bi-files me-2"></i>Selected Files (<span
+                id="fileCount"
+                >0</span
+              >)
+            </h6>
+            <div id="filesContainer" class="list-group"></div>
+          </div>
+
+          <div class="mb-3">
+            <label for="year" class="form-label">
+              <i class="bi bi-calendar3 me-1"></i>Academic Year *
+            </label>
+            <select class="form-select" id="year" name="year" required>
+              <option value="">Choose year...</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+              <option value="5">5th Year</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="subject" class="form-label">
+              <i class="bi bi-book me-1"></i>Subject *
+            </label>
+            <input
+              class="form-control"
+              id="subject"
+              name="subject"
+              placeholder="e.g., Mathematics, Physics, Computer Science"
+              required
+            />
+            <div class="form-text">Enter the subject or course name</div>
+          </div>
+
+          <div class="mb-4">
+            <label for="tags" class="form-label">
+              <i class="bi bi-tags me-1"></i>Tags (Optional)
+            </label>
+            <input
+              class="form-control"
+              id="tags"
+              name="tags"
+              placeholder="e.g., lecture, notes, exam, assignment"
+            />
+            <div class="form-text">
+              Add comma-separated tags to help organize and search
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div id="uploadProgress" class="mb-3" style="display: none">
+            <div class="progress">
+              <div
+                id="progressBar"
+                class="progress-bar progress-bar-striped progress-bar-animated"
+                role="progressbar"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p class="text-center mt-2 mb-0">
+              <span id="uploadStatus">Uploading...</span>
+            </p>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary btn-lg" type="submit" id="uploadBtn">
+              <i class="bi bi-upload me-2"></i>Upload
+              <span id="uploadBtnText">Document(s)</span>
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle me-2"></i>Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .drop-zone {
+    border: 3px dashed #ccc;
+    border-radius: 15px;
+    padding: 50px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+  }
+
+  .drop-zone.drag-over {
+    border-color: #667eea;
+    background: linear-gradient(
+      135deg,
+      rgba(102, 126, 234, 0.1) 0%,
+      rgba(118, 75, 162, 0.1) 100%
+    );
+    transform: scale(1.02);
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+  }
+
+  .file-item i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+</style>
+
+{% endblock %} {% block scripts %}
+<script>
+  const dropZone = document.getElementById("dropZone");
+  const fileInput = document.getElementById("file");
+  const filesList = document.getElementById("filesList");
+  const filesContainer = document.getElementById("filesContainer");
+  const fileCount = document.getElementById("fileCount");
+  const uploadBtn = document.getElementById("uploadBtn");
+  const uploadBtnText = document.getElementById("uploadBtnText");
+  const uploadForm = document.getElementById("uploadForm");
+  const uploadProgress = document.getElementById("uploadProgress");
+  const progressBar = document.getElementById("progressBar");
+  const uploadStatus = document.getElementById("uploadStatus");
+
+  // Prevent default drag behaviors
+  ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // Highlight drop zone when dragging over it
+  ["dragenter", "dragover"].forEach((eventName) => {
+    dropZone.addEventListener(
+      eventName,
+      () => {
+        dropZone.classList.add("drag-over");
+      },
+      false
+    );
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    dropZone.addEventListener(
+      eventName,
+      () => {
+        dropZone.classList.remove("drag-over");
+      },
+      false
+    );
+  });
+
+  // Handle dropped files
+  dropZone.addEventListener(
+    "drop",
+    (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      fileInput.files = files;
+      handleFiles(files);
+    },
+    false
+  );
+
+  // Handle file input change
+  fileInput.addEventListener("change", (e) => {
+    handleFiles(e.target.files);
+  });
+
+  function handleFiles(files) {
+    if (files.length === 0) {
+      filesList.style.display = "none";
+      return;
+    }
+
+    filesContainer.innerHTML = "";
+    filesList.style.display = "block";
+    fileCount.textContent = files.length;
+    uploadBtnText.textContent =
+      files.length === 1 ? "Document" : `${files.length} Documents`;
+
+    Array.from(files).forEach((file, index) => {
+      const fileItem = document.createElement("div");
+      fileItem.className = "list-group-item file-item";
+
+      const fileSize = (file.size / 1024).toFixed(1);
+      const sizeUnit =
+        fileSize > 1024
+          ? `${(fileSize / 1024).toFixed(1)} MB`
+          : `${fileSize} KB`;
+
+      fileItem.innerHTML = `
+      <div class="d-flex align-items-center">
+        <i class="bi bi-file-earmark text-primary"></i>
+        <div>
+          <strong>${file.name}</strong>
+          <br>
+          <small class="text-muted">${sizeUnit}</small>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+        <i class="bi bi-x-circle"></i>
+      </button>
+    `;
+
+      filesContainer.appendChild(fileItem);
+    });
+  }
+
+  function removeFile(index) {
+    const dt = new DataTransfer();
+    const files = fileInput.files;
+
+    for (let i = 0; i < files.length; i++) {
+      if (i !== index) {
+        dt.items.add(files[i]);
+      }
+    }
+
+    fileInput.files = dt.files;
+    handleFiles(fileInput.files);
+  }
+
+  // Note: Multiple file upload would require backend changes
+  // For now, we'll show a warning if multiple files are selected
+  uploadForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const files = fileInput.files;
+    if (files.length === 0) {
+      alert("Please select at least one file");
+      return;
+    }
+
+    const year = document.getElementById("year").value;
+    const subject = document.getElementById("subject").value;
+    const tags = document.getElementById("tags").value;
+
+    if (!year || !subject) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Disable form during upload
+    uploadBtn.disabled = true;
+    uploadProgress.style.display = "block";
+
+    // Create FormData
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append("files[]", file);
+    });
+    formData.append("year", year);
+    formData.append("subject", subject);
+    formData.append("tags", tags);
+
+    try {
+      uploadStatus.innerHTML = `<i class="bi bi-cloud-upload me-2"></i>Uploading ${files.length} file(s)...`;
+      progressBar.style.width = "50%";
+
+      const response = await fetch("/upload-multiple", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      progressBar.style.width = "100%";
+
+      if (result.success) {
+        // Show results
+        let resultHtml = `<strong>Upload Complete!</strong><br>`;
+        resultHtml += `✓ Successful: ${result.successful}<br>`;
+        if (result.failed > 0) {
+          resultHtml += `✗ Failed: ${result.failed}<br><br>`;
+          resultHtml += `<small>Details:<br>`;
+          result.results.forEach((r) => {
+            if (!r.success) {
+              resultHtml += `• ${r.filename}: ${r.error}<br>`;
+            }
+          });
+          resultHtml += `</small>`;
+        }
+
+        uploadStatus.innerHTML = resultHtml;
+        progressBar.classList.remove("progress-bar-animated");
+
+        if (result.successful > 0) {
+          progressBar.classList.add("bg-success");
+        }
+        if (result.failed > 0) {
+          progressBar.classList.add("bg-warning");
+        }
+
+        // Redirect after a delay
+        setTimeout(() => {
+          window.location.href = `/year/${year}`;
+        }, 3000);
+      } else {
+        throw new Error(result.error || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      uploadStatus.innerHTML = `<i class="bi bi-x-circle me-2"></i>Error: ${error.message}`;
+      progressBar.style.width = "100%";
+      progressBar.classList.remove("progress-bar-animated");
+      progressBar.classList.add("bg-danger");
+      uploadBtn.disabled = false;
+    }
+  });
+</script>
+{% endblock %}

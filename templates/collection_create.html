@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{% if edit_mode %}Edit{% else %}Create{% endif %} Collection{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-4">
+                        <i class="bi bi-{% if edit_mode %}pencil{% else %}plus-circle{% endif %} me-2"></i>
+                        {% if edit_mode %}Edit{% else %}Create{% endif %} Collection
+                    </h2>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                Collection Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   placeholder="e.g., Midterm Prep, Important Papers" 
+                                   value="{% if edit_mode %}{{ collection.name }}{% endif %}"
+                                   required>
+                            <div class="form-text">Choose a descriptive name for your collection</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="3" 
+                                      placeholder="Optional description of this collection">{% if edit_mode %}{{ collection.description }}{% endif %}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="color" class="form-label">Color</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" 
+                                           class="form-control form-control-color" 
+                                           id="color" 
+                                           name="color" 
+                                           value="{% if edit_mode %}{{ collection.color }}{% else %}#667eea{% endif %}"
+                                           title="Choose a color">
+                                    <span class="ms-2" id="colorHex">{% if edit_mode %}{{ collection.color }}{% else %}#667eea{% endif %}</span>
+                                </div>
+                                <div class="form-text">Pick a color to identify this collection</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="icon" class="form-label">Icon</label>
+                                <select class="form-select" id="icon" name="icon">
+                                    <option value="bi-folder" {% if edit_mode and collection.icon == 'bi-folder' %}selected{% endif %}>
+                                        📁 Folder
+                                    </option>
+                                    <option value="bi-book" {% if edit_mode and collection.icon == 'bi-book' %}selected{% endif %}>
+                                        📚 Book
+                                    </option>
+                                    <option value="bi-journal" {% if edit_mode and collection.icon == 'bi-journal' %}selected{% endif %}>
+                                        📓 Journal
+                                    </option>
+                                    <option value="bi-bookmark-star" {% if edit_mode and collection.icon == 'bi-bookmark-star' %}selected{% endif %}>
+                                        ⭐ Star
+                                    </option>
+                                    <option value="bi-lightbulb" {% if edit_mode and collection.icon == 'bi-lightbulb' %}selected{% endif %}>
+                                        💡 Lightbulb
+                                    </option>
+                                    <option value="bi-trophy" {% if edit_mode and collection.icon == 'bi-trophy' %}selected{% endif %}>
+                                        🏆 Trophy
+                                    </option>
+                                    <option value="bi-star-fill" {% if edit_mode and collection.icon == 'bi-star-fill' %}selected{% endif %}>
+                                        ⭐ Star Fill
+                                    </option>
+                                    <option value="bi-heart-fill" {% if edit_mode and collection.icon == 'bi-heart-fill' %}selected{% endif %}>
+                                        ❤️ Heart
+                                    </option>
+                                    <option value="bi-fire" {% if edit_mode and collection.icon == 'bi-fire' %}selected{% endif %}>
+                                        🔥 Fire
+                                    </option>
+                                    <option value="bi-briefcase" {% if edit_mode and collection.icon == 'bi-briefcase' %}selected{% endif %}>
+                                        💼 Briefcase
+                                    </option>
+                                </select>
+                                <div class="form-text">Choose an icon for visual identification</div>
+                            </div>
+                        </div>
+
+                        <!-- Preview -->
+                        <div class="mb-4">
+                            <label class="form-label">Preview</label>
+                            <div class="card" id="previewCard">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div id="previewIcon" class="collection-icon-preview me-3">
+                                            <i id="iconPreview" class="{% if edit_mode %}{{ collection.icon }}{% else %}bi-folder{% endif %} fs-3"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-0" id="namePreview">
+                                                {% if edit_mode %}{{ collection.name }}{% else %}My Collection{% endif %}
+                                            </h5>
+                                            <small class="text-muted" id="descPreview">
+                                                {% if edit_mode and collection.description %}{{ collection.description[:50] }}{% else %}Collection preview{% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if edit_mode %}{{ url_for('view_collection', collection_id=collection.id) }}{% else %}{{ url_for('collections') }}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-{% if edit_mode %}check-circle{% else %}plus-circle{% endif %} me-1"></i>
+                                {% if edit_mode %}Update{% else %}Create{% endif %} Collection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.collection-icon-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#previewCard {
+    border-left: 4px solid #667eea;
+    transition: border-color 0.3s ease;
+}
+</style>
+
+<script>
+// Live preview updates
+const nameInput = document.getElementById('name');
+const descInput = document.getElementById('description');
+const colorInput = document.getElementById('color');
+const iconInput = document.getElementById('icon');
+
+const namePreview = document.getElementById('namePreview');
+const descPreview = document.getElementById('descPreview');
+const iconPreview = document.getElementById('iconPreview');
+const previewIcon = document.getElementById('previewIcon');
+const previewCard = document.getElementById('previewCard');
+const colorHex = document.getElementById('colorHex');
+
+nameInput.addEventListener('input', function() {
+    namePreview.textContent = this.value || 'My Collection';
+});
+
+descInput.addEventListener('input', function() {
+    const desc = this.value.substring(0, 50);
+    descPreview.textContent = desc || 'Collection preview';
+});
+
+colorInput.addEventListener('input', function() {
+    const color = this.value;
+    colorHex.textContent = color;
+    previewIcon.style.backgroundColor = color + '20';
+    previewIcon.style.color = color;
+    previewCard.style.borderLeftColor = color;
+});
+
+iconInput.addEventListener('change', function() {
+    iconPreview.className = this.value + ' fs-3';
+});
+
+// Initialize preview with current color
+document.addEventListener('DOMContentLoaded', function() {
+    const initialColor = colorInput.value;
+    previewIcon.style.backgroundColor = initialColor + '20';
+    previewIcon.style.color = initialColor;
+    previewCard.style.borderLeftColor = initialColor;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %} {% block title %}My Collections{% endblock %} {% block
+content %}
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-collection me-2"></i>
+      My Collections
+    </h2>
+    <a href="{{ url_for('create_collection') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>
+      Create Collection
+    </a>
+  </div>
+
+  {% if collections %}
+  <div class="row g-4">
+    {% for item in collections %}
+    <div class="col-md-6 col-lg-4">
+      <div
+        class="card h-100 shadow-sm collection-card"
+        style="border-left: 4px solid {{ item.collection.color }};"
+      >
+        <div class="card-body">
+          <div class="d-flex align-items-start mb-3">
+            <div
+              class="collection-icon me-3"
+              style="background-color: {{ item.collection.color }}20; color: {{ item.collection.color }};"
+            >
+              <i class="{{ item.collection.icon }} fs-3"></i>
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="card-title mb-1">
+                <a
+                  href="{{ url_for('view_collection', collection_id=item.collection.id) }}"
+                  class="text-decoration-none text-dark"
+                >
+                  {{ item.collection.name }}
+                </a>
+              </h5>
+              <small class="text-muted">
+                <i class="bi bi-file-earmark me-1"></i>
+                {{ item.document_count }} document{{ 's' if item.document_count
+                != 1 else '' }}
+              </small>
+            </div>
+          </div>
+
+          {% if item.collection.description %}
+          <p class="card-text text-muted small mb-3">
+            {{ item.collection.description[:100] }}{% if
+            item.collection.description|length > 100 %}...{% endif %}
+          </p>
+          {% endif %}
+
+          <div class="text-muted small mb-3">
+            <i class="bi bi-clock me-1"></i>
+            Updated {{ item.collection.updated_at.strftime('%b %d, %Y') }}
+          </div>
+
+          <div class="btn-group w-100" role="group">
+            <a
+              href="{{ url_for('view_collection', collection_id=item.collection.id) }}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="bi bi-eye me-1"></i>View
+            </a>
+            <a
+              href="{{ url_for('edit_collection', collection_id=item.collection.id) }}"
+              class="btn btn-sm btn-outline-secondary"
+            >
+              <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              onclick="confirmDelete({{ item.collection.id }}, '{{ item.collection.name }}')"
+            >
+              <i class="bi bi-trash me-1"></i>Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-collection display-1 text-muted"></i>
+    <h4 class="mt-3 text-muted">No Collections Yet</h4>
+    <p class="text-muted">
+      Create collections to organize your documents into custom groups
+    </p>
+    <a href="{{ url_for('create_collection') }}" class="btn btn-primary mt-3">
+      <i class="bi bi-plus-circle me-1"></i>
+      Create Your First Collection
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete Collection</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Are you sure you want to delete the collection "<strong
+            id="collectionName"
+          ></strong
+          >"?
+        </p>
+        <p class="text-muted small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          Documents will not be deleted, only removed from this collection.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <form id="deleteForm" method="POST" style="display: inline">
+          <button type="submit" class="btn btn-danger">
+            Delete Collection
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .collection-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .collection-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .collection-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .d-flex.justify-content-between h2 {
+      font-size: 1.5rem;
+    }
+
+    .d-flex.justify-content-between .btn {
+      width: 100%;
+    }
+
+    .col-md-6,
+    .col-lg-4 {
+      padding: 0.5rem;
+    }
+
+    .collection-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    .btn-group {
+      flex-direction: column;
+    }
+
+    .btn-group .btn {
+      border-radius: 0.375rem !important;
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .collection-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    .collection-icon i {
+      font-size: 1.5rem !important;
+    }
+
+    .card-title {
+      font-size: 1rem;
+    }
+  }
+</style>
+
+<script>
+  function confirmDelete(collectionId, collectionName) {
+    document.getElementById("collectionName").textContent = collectionName;
+    document.getElementById("deleteForm").action =
+      "/collection/" + collectionId + "/delete";
+
+    const modal = new bootstrap.Modal(document.getElementById("deleteModal"));
+    modal.show();
+  }
+</script>
+{% endblock %}

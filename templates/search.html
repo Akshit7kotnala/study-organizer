@@ -1,0 +1,189 @@
+{% extends 'base.html' %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="display-5">
+      <i class="bi bi-search me-2 text-primary"></i>Search Results
+    </h1>
+    <p class="text-muted">Results for: <strong>"{{ query }}"</strong></p>
+  </div>
+  <div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">
+      <i class="bi bi-arrow-left me-2"></i>Back to Home
+    </a>
+  </div>
+</div>
+
+<!-- Documents List -->
+{% if documents %}
+<div class="alert alert-success mb-4">
+  <i class="bi bi-check-circle-fill me-2"></i>
+  Found {{ pagination.total }} document{{ 's' if pagination.total != 1 else ''
+  }} matching your search
+</div>
+
+<div class="list-group mb-4">
+  {% for d in documents %}
+  <div class="list-group-item doc-item">
+    <div class="row align-items-center">
+      <div class="col-auto">
+        {% if d.thumbnail_filename %}
+        <img
+          src="{{ url_for('thumbnail_file', filename=d.thumbnail_filename) }}"
+          alt="Thumbnail"
+          class="img-thumbnail"
+          style="width: 80px; height: 80px; object-fit: cover"
+        />
+        {% else %}
+        <i class="{{ d.file_icon() }}" style="font-size: 2.5rem"></i>
+        {% endif %}
+      </div>
+      <div class="col">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ d.original_filename }}</h5>
+          <small class="text-muted">
+            <i class="bi bi-calendar-event me-1"></i>{{
+            d.upload_date.strftime('%Y-%m-%d %H:%M') }}
+          </small>
+        </div>
+        <p class="mb-1">
+          <span class="badge bg-info me-2">
+            <i class="bi bi-calendar3 me-1"></i>{{ human_year_label(d.year) }}
+          </span>
+          <span class="badge bg-primary me-2">
+            <i class="bi bi-book me-1"></i>{{ d.subject }}
+          </span>
+          {% if d.get_tags() %} {% for tag in d.get_tags() %}
+          <a
+            href="{{ url_for('tag_view', slug=tag.slug) }}"
+            class="text-decoration-none"
+          >
+            <span class="badge bg-secondary me-1">
+              <i class="bi bi-tag me-1"></i>{{ tag.name }}
+            </span>
+          </a>
+          {% endfor %} {% endif %}
+        </p>
+        <small class="text-muted">
+          <i class="bi bi-hdd me-1"></i>Size: {{ d.format_size() }} {% if
+          d.mimetype == 'text/plain' %}
+          <span class="ms-2">
+            <i class="bi bi-file-text me-1 text-info"></i>Text content
+            searchable
+          </span>
+          {% endif %}
+        </small>
+      </div>
+      <div class="col-auto">
+        <div class="btn-group" role="group">
+          <a
+            class="btn btn-sm btn-outline-primary"
+            href="{{ url_for('download', doc_id=d.id) }}"
+            title="Download"
+          >
+            <i class="bi bi-download"></i>
+          </a>
+          <a
+            class="btn btn-sm btn-outline-secondary"
+            href="{{ url_for('preview', doc_id=d.id) }}"
+            target="_blank"
+            title="Preview"
+          >
+            <i class="bi bi-eye"></i>
+          </a>
+          <a
+            class="btn btn-sm btn-outline-info"
+            href="{{ url_for('edit_document', doc_id=d.id) }}"
+            title="Edit"
+          >
+            <i class="bi bi-pencil"></i>
+          </a>
+          <button
+            class="btn btn-sm btn-outline-danger"
+            onclick="confirmDelete({{ d.id }}, '{{ d.original_filename }}')"
+            title="Delete"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<nav aria-label="Search results pagination">
+  <ul class="pagination justify-content-center">
+    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+      <a
+        class="page-link"
+        href="{{ url_for('search', q=query, page=pagination.prev_num) }}"
+      >
+        <i class="bi bi-chevron-left"></i> Previous
+      </a>
+    </li>
+
+    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1,
+    left_current=2, right_current=2) %} {% if page_num %}
+    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+      <a
+        class="page-link"
+        href="{{ url_for('search', q=query, page=page_num) }}"
+      >
+        {{ page_num }}
+      </a>
+    </li>
+    {% else %}
+    <li class="page-item disabled"><span class="page-link">...</span></li>
+    {% endif %} {% endfor %}
+
+    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+      <a
+        class="page-link"
+        href="{{ url_for('search', q=query, page=pagination.next_num) }}"
+      >
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<p class="text-center text-muted">
+  Showing {{ (pagination.page - 1) * pagination.per_page + 1 }} to {{
+  min(pagination.page * pagination.per_page, pagination.total) }} of {{
+  pagination.total }} documents
+</p>
+{% endif %} {% else %}
+<div class="alert alert-warning">
+  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+  No documents found matching <strong>"{{ query }}"</strong>
+</div>
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Search Tips:</h5>
+    <ul class="mb-0">
+      <li>Search looks in filenames, subjects, tags, and note content</li>
+      <li>Try different keywords or broader terms</li>
+      <li>Check your spelling</li>
+      <li>Search is case-insensitive</li>
+    </ul>
+  </div>
+</div>
+{% endif %} {% endblock %} {% block scripts %}
+<script>
+  function confirmDelete(docId, filename) {
+    if (
+      confirm(
+        `Are you sure you want to delete "${filename}"?\n\nThis action cannot be undone.`
+      )
+    ) {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/delete/${docId}`;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+</script>
+{% endblock %}

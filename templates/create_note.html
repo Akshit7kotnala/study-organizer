@@ -1,0 +1,109 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <h1 class="display-5">
+      <i class="bi bi-journal-text me-2 text-primary"></i>Create Note
+    </h1>
+    <p class="text-muted">Create a text note without uploading a file</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <form method="post">
+          <div class="mb-3">
+            <label for="title" class="form-label">
+              <i class="bi bi-pencil-square me-1"></i>Note Title *
+            </label>
+            <input
+              class="form-control"
+              id="title"
+              name="title"
+              placeholder="e.g., Chapter 5 Summary, Key Formulas"
+              required
+            />
+            <div class="form-text">
+              This will be the filename (saved as .txt)
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="content" class="form-label">
+              <i class="bi bi-text-paragraph me-1"></i>Note Content *
+            </label>
+            <textarea
+              class="form-control"
+              id="content"
+              name="content"
+              rows="12"
+              placeholder="Enter your notes here..."
+              required
+            ></textarea>
+            <div class="form-text">
+              Type or paste your study notes, formulas, summaries, etc.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="year" class="form-label">
+              <i class="bi bi-calendar3 me-1"></i>Academic Year *
+            </label>
+            <select class="form-select" id="year" name="year" required>
+              <option value="">Choose year...</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+              <option value="5">5th Year</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="subject" class="form-label">
+              <i class="bi bi-book me-1"></i>Subject *
+            </label>
+            <input
+              class="form-control"
+              id="subject"
+              name="subject"
+              placeholder="e.g., Mathematics, Physics, Computer Science"
+              required
+            />
+          </div>
+
+          <div class="mb-4">
+            <label for="tags" class="form-label">
+              <i class="bi bi-tags me-1"></i>Tags (Optional)
+            </label>
+            <input
+              class="form-control"
+              id="tags"
+              name="tags"
+              placeholder="e.g., notes, summary, formulas, revision"
+            />
+            <div class="form-text">Add comma-separated tags</div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary btn-lg" type="submit">
+              <i class="bi bi-save me-2"></i>Create Note
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle me-2"></i>Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-4">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      <strong>Tip:</strong> Notes are saved as .txt files and can be previewed,
+      downloaded, and filtered just like uploaded documents.
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-lg">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">
+          <i class="bi bi-pencil-square me-2"></i>Edit Document
+        </h4>
+      </div>
+      <div class="card-body">
+        <!-- Document Info -->
+        <div class="alert alert-info mb-4">
+          <div class="d-flex align-items-center">
+            <i class="{{ doc.file_icon() }}" style="font-size: 2rem"></i>
+            <div class="ms-3">
+              <strong>{{ doc.original_filename }}</strong>
+              <br />
+              <small class="text-muted">
+                Uploaded: {{ doc.upload_date.strftime('%Y-%m-%d %H:%M') }} |
+                Size: {{ doc.format_size() }}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Form -->
+        <form method="post">
+          <div class="mb-3">
+            <label for="year" class="form-label">
+              <i class="bi bi-calendar3 me-1"></i>Year *
+            </label>
+            <input
+              type="number"
+              class="form-control"
+              id="year"
+              name="year"
+              value="{{ doc.year }}"
+              min="1"
+              max="10"
+              required
+              placeholder="e.g., 1, 2, 3, 4"
+            />
+            <div class="form-text">Academic year (e.g., 1 = First Year)</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="subject" class="form-label">
+              <i class="bi bi-book me-1"></i>Subject *
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="subject"
+              name="subject"
+              value="{{ doc.subject }}"
+              required
+              placeholder="e.g., Mathematics, Physics, Chemistry"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="tags" class="form-label">
+              <i class="bi bi-tags me-1"></i>Tags (optional)
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="tags"
+              name="tags"
+              value="{{ tags_string }}"
+              placeholder="e.g., homework, important, exam-prep (comma-separated)"
+            />
+            <div class="form-text">Separate multiple tags with commas</div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a
+              href="{{ url_for('year_view', year=doc.year) }}"
+              class="btn btn-secondary"
+            >
+              <i class="bi bi-x-circle me-1"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i>Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Warning Note -->
+    <div class="alert alert-warning mt-3">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      <strong>Note:</strong> The filename cannot be changed. Only metadata
+      (year, subject, tags) can be edited.
+    </div>
+  </div>
+</div>
+{% endblock %}
