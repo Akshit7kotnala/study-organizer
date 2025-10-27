@@ -18,6 +18,13 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/custom.css') }}"
+    />
+
     <style>
       :root {
         /* Light mode colors */
@@ -61,11 +68,16 @@
 
       * {
         font-family: "Poppins", sans-serif;
-        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        transition: background-color 0.3s ease, color 0.3s ease,
+          border-color 0.3s ease;
       }
 
       body {
-        background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--bg-gradient-start) 0%,
+          var(--bg-gradient-end) 100%
+        );
         background-attachment: fixed;
         min-height: 100vh;
         color: var(--text-primary);
@@ -523,7 +535,11 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%);
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(0, 0, 0, 0.7) 100%
+        );
         opacity: 0;
         transition: opacity 0.3s ease;
         display: flex;
@@ -537,27 +553,117 @@
       }
 
       /* Subject Color Coding */
-      .subject-badge-math { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%) !important; color: white !important; }
-      .subject-badge-science { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important; color: white !important; }
-      .subject-badge-english { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%) !important; color: white !important; }
-      .subject-badge-history { background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%) !important; color: white !important; }
-      .subject-badge-physics { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; color: white !important; }
-      .subject-badge-chemistry { background: linear-gradient(135deg, #38b2ac 0%, #319795 100%) !important; color: white !important; }
-      .subject-badge-biology { background: linear-gradient(135deg, #68d391 0%, #48bb78 100%) !important; color: white !important; }
-      .subject-badge-geography { background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%) !important; color: white !important; }
-      .subject-badge-computer { background: linear-gradient(135deg, #fc8181 0%, #f56565 100%) !important; color: white !important; }
-      .subject-badge-default { background: linear-gradient(135deg, #a0aec0 0%, #718096 100%) !important; color: white !important; }
+      .subject-badge-math {
+        background: linear-gradient(
+          135deg,
+          #4299e1 0%,
+          #3182ce 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-science {
+        background: linear-gradient(
+          135deg,
+          #48bb78 0%,
+          #38a169 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-english {
+        background: linear-gradient(
+          135deg,
+          #ed8936 0%,
+          #dd6b20 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-history {
+        background: linear-gradient(
+          135deg,
+          #9f7aea 0%,
+          #805ad5 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-physics {
+        background: linear-gradient(
+          135deg,
+          #667eea 0%,
+          #764ba2 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-chemistry {
+        background: linear-gradient(
+          135deg,
+          #38b2ac 0%,
+          #319795 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-biology {
+        background: linear-gradient(
+          135deg,
+          #68d391 0%,
+          #48bb78 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-geography {
+        background: linear-gradient(
+          135deg,
+          #f6ad55 0%,
+          #ed8936 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-computer {
+        background: linear-gradient(
+          135deg,
+          #fc8181 0%,
+          #f56565 100%
+        ) !important;
+        color: white !important;
+      }
+      .subject-badge-default {
+        background: linear-gradient(
+          135deg,
+          #a0aec0 0%,
+          #718096 100%
+        ) !important;
+        color: white !important;
+      }
 
-      .document-card-border-math { border-left: 4px solid #4299e1; }
-      .document-card-border-science { border-left: 4px solid #48bb78; }
-      .document-card-border-english { border-left: 4px solid #ed8936; }
-      .document-card-border-history { border-left: 4px solid #9f7aea; }
-      .document-card-border-physics { border-left: 4px solid #667eea; }
-      .document-card-border-chemistry { border-left: 4px solid #38b2ac; }
-      .document-card-border-biology { border-left: 4px solid #68d391; }
-      .document-card-border-geography { border-left: 4px solid #f6ad55; }
-      .document-card-border-computer { border-left: 4px solid #fc8181; }
-      .document-card-border-default { border-left: 4px solid #a0aec0; }
+      .document-card-border-math {
+        border-left: 4px solid #4299e1;
+      }
+      .document-card-border-science {
+        border-left: 4px solid #48bb78;
+      }
+      .document-card-border-english {
+        border-left: 4px solid #ed8936;
+      }
+      .document-card-border-history {
+        border-left: 4px solid #9f7aea;
+      }
+      .document-card-border-physics {
+        border-left: 4px solid #667eea;
+      }
+      .document-card-border-chemistry {
+        border-left: 4px solid #38b2ac;
+      }
+      .document-card-border-biology {
+        border-left: 4px solid #68d391;
+      }
+      .document-card-border-geography {
+        border-left: 4px solid #f6ad55;
+      }
+      .document-card-border-computer {
+        border-left: 4px solid #fc8181;
+      }
+      .document-card-border-default {
+        border-left: 4px solid #a0aec0;
+      }
 
       /* Quick Actions on Hover */
       .document-card .quick-actions {
@@ -576,7 +682,7 @@
 
       .document-card .quick-actions .btn {
         margin-left: 0.25rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       }
     </style>
   </head>
@@ -629,22 +735,37 @@
               </a>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="collaborationDropdown" role="button" 
-                 data-bs-toggle="dropdown" aria-expanded="false">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="collaborationDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
                 <i class="bi bi-people-fill me-1"></i
                 ><span class="d-inline">Collaborate</span>
               </a>
               <ul class="dropdown-menu" aria-labelledby="collaborationDropdown">
-                <li><a class="dropdown-item" href="{{ url_for('shared_with_me') }}">
-                  <i class="bi bi-share-fill me-2"></i>Shared With Me
-                </a></li>
-                <li><a class="dropdown-item" href="{{ url_for('study_groups') }}">
-                  <i class="bi bi-people-fill me-2"></i>Study Groups
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="{{ url_for('create_group') }}">
-                  <i class="bi bi-plus-circle me-2"></i>Create Group
-                </a></li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('shared_with_me') }}"
+                  >
+                    <i class="bi bi-share-fill me-2"></i>Shared With Me
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('study_groups') }}">
+                    <i class="bi bi-people-fill me-2"></i>Study Groups
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('create_group') }}">
+                    <i class="bi bi-plus-circle me-2"></i>Create Group
+                  </a>
+                </li>
               </ul>
             </li>
             {% endif %}
@@ -674,11 +795,21 @@
           </form>
           <div class="d-flex align-items-center flex-column flex-lg-row">
             <!-- Notifications Badge -->
-            <a href="{{ url_for('notifications') }}" class="position-relative me-3 mb-2 mb-lg-0" 
-               id="notifications-bell" title="Notifications">
-              <i class="bi bi-bell-fill text-dark" style="font-size: 1.25rem;"></i>
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                    id="unread-count" style="display: none; font-size: 0.65rem;">
+            <a
+              href="{{ url_for('notifications') }}"
+              class="position-relative me-3 mb-2 mb-lg-0"
+              id="notifications-bell"
+              title="Notifications"
+            >
+              <i
+                class="bi bi-bell-fill text-dark"
+                style="font-size: 1.25rem"
+              ></i>
+              <span
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                id="unread-count"
+                style="display: none; font-size: 0.65rem"
+              >
                 0
               </span>
             </a>
@@ -741,42 +872,43 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Dark Mode Toggle Script -->
     <script>
       // Load theme from localStorage
-      const currentTheme = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', currentTheme);
-      
+      const currentTheme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", currentTheme);
+
       // Update icon based on theme
       function updateThemeIcon(theme) {
-        const icon = document.getElementById('theme-icon');
+        const icon = document.getElementById("theme-icon");
         if (icon) {
-          if (theme === 'dark') {
-            icon.className = 'bi bi-sun-fill';
+          if (theme === "dark") {
+            icon.className = "bi bi-sun-fill";
           } else {
-            icon.className = 'bi bi-moon-stars-fill';
+            icon.className = "bi bi-moon-stars-fill";
           }
         }
       }
-      
+
       // Initialize icon
       updateThemeIcon(currentTheme);
-      
+
       // Toggle theme
-      const themeToggle = document.getElementById('theme-toggle');
+      const themeToggle = document.getElementById("theme-toggle");
       if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-          const currentTheme = document.documentElement.getAttribute('data-theme');
-          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-          
-          document.documentElement.setAttribute('data-theme', newTheme);
-          localStorage.setItem('theme', newTheme);
+        themeToggle.addEventListener("click", function () {
+          const currentTheme =
+            document.documentElement.getAttribute("data-theme");
+          const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+          document.documentElement.setAttribute("data-theme", newTheme);
+          localStorage.setItem("theme", newTheme);
           updateThemeIcon(newTheme);
         });
       }
     </script>
-    
+
     <!-- Notifications Badge Script -->
     <script>
       {% if current_user.is_authenticated %}
@@ -795,13 +927,13 @@
           })
           .catch(error => console.log('Error fetching notifications:', error));
       }
-      
+
       // Update immediately and then every 30 seconds
       updateNotificationCount();
       setInterval(updateNotificationCount, 30000);
       {% endif %}
     </script>
-    
+
     {% block scripts %}{% endblock %}
   </body>
 </html>
