@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Shared With Me - Study Organizer{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">
+        <i class="bi bi-people-fill"></i> Shared With Me
+    </h2>
+
+    <!-- Shared Collections -->
+    <div class="section-card mb-4">
+        <h4 class="section-title">
+            <i class="bi bi-folder-fill"></i> Shared Collections
+        </h4>
+        {% if shared_collections %}
+        <div class="row g-3">
+            {% for collection in shared_collections %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card collection-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="collection-icon me-3" style="background-color: {{ collection.color }}20; color: {{ collection.color }};">
+                                <i class="bi {{ collection.icon }}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-0">{{ collection.name }}</h5>
+                                <small class="text-muted">
+                                    By {{ collection.creator.name or collection.creator.email }}
+                                </small>
+                            </div>
+                        </div>
+                        {% if collection.description %}
+                        <p class="card-text text-muted small">{{ collection.description[:100] }}...</p>
+                        {% endif %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">
+                                {{ collection.document_count() }} documents
+                            </span>
+                            <a href="{{ url_for('view_collection', collection_id=collection.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-folder-open"></i> Open
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No collections have been shared with you yet.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Shared Documents -->
+    <div class="section-card">
+        <h4 class="section-title">
+            <i class="bi bi-file-earmark-text-fill"></i> Shared Documents
+        </h4>
+        {% if shared_docs %}
+        <div class="row g-4">
+            {% for doc in shared_docs %}
+            <div class="col-md-6 col-lg-4">
+                <div class="document-card document-card-border-{{ get_subject_color_class(doc.subject) }}">
+                    {% if doc.thumbnail_filename %}
+                    <div class="document-thumbnail">
+                        {% if doc.storage_type == 's3' %}
+                        <img src="{{ url_for('thumbnail_file', filename=doc.thumbnail_filename) }}" 
+                             alt="{{ doc.original_filename }}" class="w-100">
+                        {% elif doc.storage_type == 'azure' %}
+                        <img src="{{ url_for('thumbnail_file', filename=doc.thumbnail_filename) }}" 
+                             alt="{{ doc.original_filename }}" class="w-100">
+                        {% else %}
+                        <img src="{{ url_for('thumbnail_file', filename=doc.thumbnail_filename) }}" 
+                             alt="{{ doc.original_filename }}" class="w-100">
+                        {% endif %}
+                        
+                        <div class="thumbnail-overlay">
+                            <div class="quick-actions">
+                                <a href="{{ url_for('preview', doc_id=doc.id) }}" class="btn btn-light btn-sm" title="Preview">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                                <a href="{{ url_for('download', doc_id=doc.id) }}" class="btn btn-light btn-sm" title="Download">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="document-thumbnail no-thumbnail">
+                        <i class="{{ doc.file_icon() }}"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate" title="{{ doc.original_filename }}">
+                            {{ doc.original_filename }}
+                        </h6>
+                        
+                        <div class="mb-2">
+                            <span class="subject-badge subject-badge-{{ get_subject_color_class(doc.subject) }}">
+                                {{ doc.subject }}
+                            </span>
+                            <span class="badge bg-light text-dark">Year {{ doc.year }}</span>
+                        </div>
+                        
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-person"></i> Shared by {{ doc.owner.name or doc.owner.email }}
+                        </div>
+                        
+                        {% if doc.tag_objects %}
+                        <div class="mb-2">
+                            {% for tag in doc.tag_objects[:3] %}
+                            <a href="{{ url_for('tag_view', slug=tag.slug) }}" class="badge bg-secondary text-decoration-none">
+                                #{{ tag.name }}
+                            </a>
+                            {% endfor %}
+                            {% if doc.tag_objects|length > 3 %}
+                            <span class="badge bg-secondary">+{{ doc.tag_objects|length - 3 }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{{ url_for('preview', doc_id=doc.id) }}" class="btn btn-sm btn-primary flex-fill">
+                                <i class="bi bi-eye"></i> Preview
+                            </a>
+                            <a href="{{ url_for('document_comments', doc_id=doc.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-chat-dots"></i> Comments
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No documents have been shared with you yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

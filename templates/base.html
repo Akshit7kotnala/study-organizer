@@ -628,6 +628,25 @@
                 ><span class="d-inline">Collections</span>
               </a>
             </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="collaborationDropdown" role="button" 
+                 data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-people-fill me-1"></i
+                ><span class="d-inline">Collaborate</span>
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="collaborationDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('shared_with_me') }}">
+                  <i class="bi bi-share-fill me-2"></i>Shared With Me
+                </a></li>
+                <li><a class="dropdown-item" href="{{ url_for('study_groups') }}">
+                  <i class="bi bi-people-fill me-2"></i>Study Groups
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('create_group') }}">
+                  <i class="bi bi-plus-circle me-2"></i>Create Group
+                </a></li>
+              </ul>
+            </li>
             {% endif %}
           </ul>
           {% if current_user.is_authenticated %}
@@ -654,6 +673,16 @@
             </button>
           </form>
           <div class="d-flex align-items-center flex-column flex-lg-row">
+            <!-- Notifications Badge -->
+            <a href="{{ url_for('notifications') }}" class="position-relative me-3 mb-2 mb-lg-0" 
+               id="notifications-bell" title="Notifications">
+              <i class="bi bi-bell-fill text-dark" style="font-size: 1.25rem;"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                    id="unread-count" style="display: none; font-size: 0.65rem;">
+                0
+              </span>
+            </a>
+
             <!-- Dark Mode Toggle -->
             <button
               id="theme-toggle"
@@ -746,6 +775,31 @@
           updateThemeIcon(newTheme);
         });
       }
+    </script>
+    
+    <!-- Notifications Badge Script -->
+    <script>
+      {% if current_user.is_authenticated %}
+      // Fetch unread notification count
+      function updateNotificationCount() {
+        fetch('{{ url_for("unread_notifications_count") }}')
+          .then(response => response.json())
+          .then(data => {
+            const badge = document.getElementById('unread-count');
+            if (badge && data.count > 0) {
+              badge.textContent = data.count > 99 ? '99+' : data.count;
+              badge.style.display = 'inline-block';
+            } else if (badge) {
+              badge.style.display = 'none';
+            }
+          })
+          .catch(error => console.log('Error fetching notifications:', error));
+      }
+      
+      // Update immediately and then every 30 seconds
+      updateNotificationCount();
+      setInterval(updateNotificationCount, 30000);
+      {% endif %}
     </script>
     
     {% block scripts %}{% endblock %}

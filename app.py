@@ -134,6 +134,14 @@ document_collections = db.Table('document_collections',
     db.Column('collection_id', db.Integer, db.ForeignKey('collection.id'), primary_key=True)
 )
 
+# Association table for many-to-many relationship between StudyGroup and User
+group_members = db.Table('group_members',
+    db.Column('group_id', db.Integer, db.ForeignKey('study_group.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('role', db.String(16), default='member'),  # 'admin', 'member'
+    db.Column('joined_at', db.DateTime, default=datetime.utcnow)
+)
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -144,6 +152,11 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     documents = db.relationship('Document', backref='owner', lazy=True)
+    shared_with_me = db.relationship('SharePermission', foreign_keys='SharePermission.shared_with_id', backref='recipient', lazy=True)
+    my_shares = db.relationship('SharePermission', foreign_keys='SharePermission.shared_by_id', backref='sharer', lazy=True)
+    comments = db.relationship('Comment', backref='author', lazy=True)
+    notifications = db.relationship('Notification', backref='user', lazy=True, order_by='Notification.created_at.desc()')
+
 
 
 class Tag(db.Model):
@@ -269,6 +282,90 @@ class Document(db.Model):
         return icon_map.get(ext, 'bi-file-earmark-fill')
 
 
+class SharePermission(db.Model):
+    """Model for sharing documents and collections with other users."""
+    id = db.Column(db.Integer, primary_key=True)
+    shared_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    shared_with_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # What's being shared
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)
+    collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=True)
+    
+    # Permission level: 'viewer', 'editor', 'admin'
+    permission = db.Column(db.String(16), default='viewer', nullable=False)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = db.relationship('Document', backref='shares')
+    collection = db.relationship('Collection', backref='shares')
+    
+    def __repr__(self):
+        return f'<SharePermission {self.permission} for {self.document_id or self.collection_id}>'
+
+
+class Comment(db.Model):
+    """Model for comments/annotations on documents."""
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    page_number = db.Column(db.Integer, nullable=True)  # For PDFs, page annotation
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    document = db.relationship('Document', backref='comments')
+    
+    def __repr__(self):
+        return f'<Comment on Document {self.document_id} by User {self.user_id}>'
+
+
+class StudyGroup(db.Model):
+    """Model for study groups."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    icon = db.Column(db.String(32), default='bi-people-fill')
+    color = db.Column(db.String(7), default='#667eea')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    creator = db.relationship('User', backref='created_groups')
+    members = db.relationship('User', secondary=group_members, backref='study_groups')
+    
+    def __repr__(self):
+        return f'<StudyGroup {self.name}>'
+    
+    def member_count(self):
+        """Return the number of members in this group."""
+        return len(self.members)
+    
+    def is_admin(self, user):
+        """Check if user is admin of this group."""
+        if user.id == self.created_by_id:
+            return True
+        # Could extend to check group_members role
+        return False
+
+
+class Notification(db.Model):
+    """Model for user notifications."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(256), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    type = db.Column(db.String(32), default='info')  # 'info', 'share', 'comment', 'group'
+    link = db.Column(db.String(512), nullable=True)  # Link to relevant page
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Notification for User {self.user_id}>'
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -308,6 +405,76 @@ def get_subject_color_class(subject: str) -> str:
             return value
     
     return 'default'
+
+
+def can_access_document(user, document):
+    """Check if user can access a document (owner or has share permission)."""
+    if document.user_id == user.id:
+        return True
+    
+    # Check if document is shared with user
+    share = SharePermission.query.filter_by(
+        shared_with_id=user.id,
+        document_id=document.id
+    ).first()
+    
+    return share is not None
+
+
+def can_edit_document(user, document):
+    """Check if user can edit a document (owner or has editor/admin permission)."""
+    if document.user_id == user.id:
+        return True
+    
+    # Check if user has editor or admin permission
+    share = SharePermission.query.filter_by(
+        shared_with_id=user.id,
+        document_id=document.id
+    ).filter(SharePermission.permission.in_(['editor', 'admin'])).first()
+    
+    return share is not None
+
+
+def can_access_collection(user, collection):
+    """Check if user can access a collection (owner or has share permission)."""
+    if collection.user_id == user.id:
+        return True
+    
+    # Check if collection is shared with user
+    share = SharePermission.query.filter_by(
+        shared_with_id=user.id,
+        collection_id=collection.id
+    ).first()
+    
+    return share is not None
+
+
+def can_edit_collection(user, collection):
+    """Check if user can edit a collection (owner or has editor/admin permission)."""
+    if collection.user_id == user.id:
+        return True
+    
+    # Check if user has editor or admin permission
+    share = SharePermission.query.filter_by(
+        shared_with_id=user.id,
+        collection_id=collection.id
+    ).filter(SharePermission.permission.in_(['editor', 'admin'])).first()
+    
+    return share is not None
+
+
+def create_notification(user_id, title, message, notification_type='info', link=None):
+    """Helper function to create a notification for a user."""
+    notification = Notification(
+        user_id=user_id,
+        title=title,
+        message=message,
+        type=notification_type,
+        link=link
+    )
+    db.session.add(notification)
+    db.session.commit()
+    return notification
 
 
 def generate_thumbnail(file_path: str, mimetype: str) -> str:
@@ -1309,6 +1476,185 @@ def delete_document(doc_id: int):
     return redirect(request.referrer or url_for('index'))
 
 
+# ===== SHARING & COLLABORATION ROUTES =====
+
+@app.route('/share/document/<int:doc_id>', methods=['GET', 'POST'])
+@login_required
+def share_document(doc_id):
+    """Share a document with another user."""
+    doc = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        permission = request.form.get('permission', 'viewer')
+        
+        if not email:
+            flash('Please provide an email address', 'danger')
+            return redirect(url_for('share_document', doc_id=doc_id))
+        
+        # Find the user by email
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            flash(f'No user found with email: {email}', 'danger')
+            return redirect(url_for('share_document', doc_id=doc_id))
+        
+        if user.id == current_user.id:
+            flash('You cannot share with yourself', 'warning')
+            return redirect(url_for('share_document', doc_id=doc_id))
+        
+        # Check if already shared
+        existing = SharePermission.query.filter_by(
+            shared_by_id=current_user.id,
+            shared_with_id=user.id,
+            document_id=doc_id
+        ).first()
+        
+        if existing:
+            # Update permission
+            existing.permission = permission
+            db.session.commit()
+            flash(f'Updated sharing permission for {user.name or user.email}', 'success')
+        else:
+            # Create new share
+            share = SharePermission(
+                shared_by_id=current_user.id,
+                shared_with_id=user.id,
+                document_id=doc_id,
+                permission=permission
+            )
+            db.session.add(share)
+            db.session.commit()
+            
+            # Create notification
+            create_notification(
+                user_id=user.id,
+                title='Document Shared',
+                message=f'{current_user.name or current_user.email} shared "{doc.original_filename}" with you',
+                notification_type='share',
+                link=url_for('preview', doc_id=doc_id)
+            )
+            
+            flash(f'Document shared with {user.name or user.email}', 'success')
+        
+        return redirect(url_for('share_document', doc_id=doc_id))
+    
+    # GET request - show sharing interface
+    shares = SharePermission.query.filter_by(
+        shared_by_id=current_user.id,
+        document_id=doc_id
+    ).all()
+    
+    return render_template('share_document.html', doc=doc, shares=shares)
+
+
+@app.route('/share/collection/<int:collection_id>', methods=['GET', 'POST'])
+@login_required
+def share_collection(collection_id):
+    """Share a collection with another user."""
+    collection = Collection.query.filter_by(id=collection_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        permission = request.form.get('permission', 'viewer')
+        
+        if not email:
+            flash('Please provide an email address', 'danger')
+            return redirect(url_for('share_collection', collection_id=collection_id))
+        
+        # Find the user by email
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            flash(f'No user found with email: {email}', 'danger')
+            return redirect(url_for('share_collection', collection_id=collection_id))
+        
+        if user.id == current_user.id:
+            flash('You cannot share with yourself', 'warning')
+            return redirect(url_for('share_collection', collection_id=collection_id))
+        
+        # Check if already shared
+        existing = SharePermission.query.filter_by(
+            shared_by_id=current_user.id,
+            shared_with_id=user.id,
+            collection_id=collection_id
+        ).first()
+        
+        if existing:
+            # Update permission
+            existing.permission = permission
+            db.session.commit()
+            flash(f'Updated sharing permission for {user.name or user.email}', 'success')
+        else:
+            # Create new share
+            share = SharePermission(
+                shared_by_id=current_user.id,
+                shared_with_id=user.id,
+                collection_id=collection_id,
+                permission=permission
+            )
+            db.session.add(share)
+            db.session.commit()
+            
+            # Create notification
+            create_notification(
+                user_id=user.id,
+                title='Collection Shared',
+                message=f'{current_user.name or current_user.email} shared collection "{collection.name}" with you',
+                notification_type='share',
+                link=url_for('collection_view', collection_id=collection_id)
+            )
+            
+            flash(f'Collection shared with {user.name or user.email}', 'success')
+        
+        return redirect(url_for('share_collection', collection_id=collection_id))
+    
+    # GET request - show sharing interface
+    shares = SharePermission.query.filter_by(
+        shared_by_id=current_user.id,
+        collection_id=collection_id
+    ).all()
+    
+    return render_template('share_collection.html', collection=collection, shares=shares)
+
+
+@app.route('/share/revoke/<int:share_id>', methods=['POST'])
+@login_required
+def revoke_share(share_id):
+    """Revoke a share permission."""
+    share = SharePermission.query.filter_by(id=share_id, shared_by_id=current_user.id).first_or_404()
+    
+    db.session.delete(share)
+    db.session.commit()
+    
+    flash('Access revoked successfully', 'success')
+    return redirect(request.referrer or url_for('index'))
+
+
+@app.route('/shared-with-me')
+@login_required
+def shared_with_me():
+    """View all documents and collections shared with current user."""
+    # Get shared documents
+    doc_shares = SharePermission.query.filter_by(
+        shared_with_id=current_user.id
+    ).filter(SharePermission.document_id.isnot(None)).all()
+    
+    shared_docs = [share.document for share in doc_shares if share.document]
+    
+    # Get shared collections
+    collection_shares = SharePermission.query.filter_by(
+        shared_with_id=current_user.id
+    ).filter(SharePermission.collection_id.isnot(None)).all()
+    
+    shared_collections = [share.collection for share in collection_shares if share.collection]
+    
+    return render_template(
+        'shared_with_me.html',
+        shared_docs=shared_docs,
+        shared_collections=shared_collections,
+        get_subject_color_class=get_subject_color_class
+    )
+
+
 # ===== COLLECTIONS ROUTES =====
 
 @app.route('/collections')
@@ -1503,6 +1849,248 @@ def thumbnail_file(filename):
     # Otherwise serve from local thumbnails directory
     thumbnail_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails')
     return send_from_directory(thumbnail_dir, filename)
+
+
+# ===== COMMENTS ROUTES =====
+
+@app.route('/document/<int:doc_id>/comments', methods=['GET', 'POST'])
+@login_required
+def document_comments(doc_id):
+    """View and add comments to a document."""
+    doc = Document.query.get_or_404(doc_id)
+    
+    # Check if user can access this document
+    if not can_access_document(current_user, doc):
+        flash('You do not have access to this document', 'danger')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        content = request.form.get('content', '').strip()
+        page_number = request.form.get('page_number')
+        
+        if not content:
+            flash('Comment cannot be empty', 'danger')
+            return redirect(url_for('document_comments', doc_id=doc_id))
+        
+        comment = Comment(
+            document_id=doc_id,
+            user_id=current_user.id,
+            content=content,
+            page_number=int(page_number) if page_number else None
+        )
+        db.session.add(comment)
+        db.session.commit()
+        
+        # Notify document owner if commenter is not the owner
+        if doc.user_id != current_user.id:
+            create_notification(
+                user_id=doc.user_id,
+                title='New Comment',
+                message=f'{current_user.name or current_user.email} commented on "{doc.original_filename}"',
+                notification_type='comment',
+                link=url_for('document_comments', doc_id=doc_id)
+            )
+        
+        flash('Comment added successfully', 'success')
+        return redirect(url_for('document_comments', doc_id=doc_id))
+    
+    # GET request - show comments
+    comments = Comment.query.filter_by(document_id=doc_id).order_by(Comment.created_at.desc()).all()
+    
+    return render_template('document_comments.html', doc=doc, comments=comments)
+
+
+@app.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    """Delete a comment."""
+    comment = Comment.query.get_or_404(comment_id)
+    
+    # Only the comment author or document owner can delete
+    if comment.user_id != current_user.id and comment.document.user_id != current_user.id:
+        flash('You do not have permission to delete this comment', 'danger')
+        return redirect(request.referrer or url_for('index'))
+    
+    doc_id = comment.document_id
+    db.session.delete(comment)
+    db.session.commit()
+    
+    flash('Comment deleted successfully', 'success')
+    return redirect(url_for('document_comments', doc_id=doc_id))
+
+
+# ===== STUDY GROUPS ROUTES =====
+
+@app.route('/groups')
+@login_required
+def study_groups():
+    """View all study groups."""
+    my_groups = current_user.study_groups
+    created_groups = StudyGroup.query.filter_by(created_by_id=current_user.id).all()
+    
+    return render_template('study_groups.html', my_groups=my_groups, created_groups=created_groups)
+
+
+@app.route('/group/create', methods=['GET', 'POST'])
+@login_required
+def create_group():
+    """Create a new study group."""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        color = request.form.get('color', '#667eea')
+        icon = request.form.get('icon', 'bi-people-fill')
+        
+        if not name:
+            flash('Group name is required', 'danger')
+            return redirect(url_for('create_group'))
+        
+        group = StudyGroup(
+            name=name,
+            description=description,
+            color=color,
+            icon=icon,
+            created_by_id=current_user.id
+        )
+        
+        # Add creator as first member
+        group.members.append(current_user)
+        
+        db.session.add(group)
+        db.session.commit()
+        
+        flash(f'Study group "{name}" created successfully', 'success')
+        return redirect(url_for('group_view', group_id=group.id))
+    
+    return render_template('create_group.html')
+
+
+@app.route('/group/<int:group_id>')
+@login_required
+def group_view(group_id):
+    """View a study group."""
+    group = StudyGroup.query.get_or_404(group_id)
+    
+    # Check if user is a member
+    if current_user not in group.members:
+        flash('You are not a member of this group', 'danger')
+        return redirect(url_for('study_groups'))
+    
+    # Get shared documents in this group (we can extend this later)
+    # For now, show documents shared by group members
+    member_ids = [member.id for member in group.members]
+    
+    shared_docs = db.session.query(Document).join(
+        SharePermission,
+        Document.id == SharePermission.document_id
+    ).filter(
+        SharePermission.shared_with_id == current_user.id,
+        SharePermission.shared_by_id.in_(member_ids)
+    ).all()
+    
+    return render_template(
+        'group_view.html',
+        group=group,
+        shared_docs=shared_docs,
+        get_subject_color_class=get_subject_color_class
+    )
+
+
+@app.route('/group/<int:group_id>/invite', methods=['POST'])
+@login_required
+def invite_to_group(group_id):
+    """Invite a user to join a study group."""
+    group = StudyGroup.query.get_or_404(group_id)
+    
+    # Only group creator or admin can invite
+    if not group.is_admin(current_user):
+        flash('You do not have permission to invite members', 'danger')
+        return redirect(url_for('group_view', group_id=group_id))
+    
+    email = request.form.get('email', '').strip()
+    if not email:
+        flash('Please provide an email address', 'danger')
+        return redirect(url_for('group_view', group_id=group_id))
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash(f'No user found with email: {email}', 'danger')
+        return redirect(url_for('group_view', group_id=group_id))
+    
+    if user in group.members:
+        flash('User is already a member of this group', 'warning')
+        return redirect(url_for('group_view', group_id=group_id))
+    
+    group.members.append(user)
+    db.session.commit()
+    
+    # Create notification
+    create_notification(
+        user_id=user.id,
+        title='Group Invitation',
+        message=f'{current_user.name or current_user.email} added you to study group "{group.name}"',
+        notification_type='group',
+        link=url_for('group_view', group_id=group_id)
+    )
+    
+    flash(f'{user.name or user.email} added to the group', 'success')
+    return redirect(url_for('group_view', group_id=group_id))
+
+
+@app.route('/group/<int:group_id>/leave', methods=['POST'])
+@login_required
+def leave_group(group_id):
+    """Leave a study group."""
+    group = StudyGroup.query.get_or_404(group_id)
+    
+    if current_user not in group.members:
+        flash('You are not a member of this group', 'warning')
+        return redirect(url_for('study_groups'))
+    
+    if group.created_by_id == current_user.id:
+        flash('Group creator cannot leave the group. Delete the group instead.', 'warning')
+        return redirect(url_for('group_view', group_id=group_id))
+    
+    group.members.remove(current_user)
+    db.session.commit()
+    
+    flash(f'You left the group "{group.name}"', 'success')
+    return redirect(url_for('study_groups'))
+
+
+# ===== NOTIFICATIONS ROUTES =====
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    """View all notifications."""
+    notifications_list = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(50).all()
+    
+    # Mark all as read
+    for notif in notifications_list:
+        if not notif.read:
+            notif.read = True
+    db.session.commit()
+    
+    return render_template('notifications.html', notifications=notifications_list)
+
+
+@app.route('/notifications/unread-count')
+@login_required
+def unread_notifications_count():
+    """API endpoint to get unread notification count."""
+    count = Notification.query.filter_by(user_id=current_user.id, read=False).count()
+    return jsonify({'count': count})
+
+
+@app.route('/notification/<int:notif_id>/mark-read', methods=['POST'])
+@login_required
+def mark_notification_read(notif_id):
+    """Mark a notification as read."""
+    notif = Notification.query.filter_by(id=notif_id, user_id=current_user.id).first_or_404()
+    notif.read = True
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 if __name__ == '__main__':

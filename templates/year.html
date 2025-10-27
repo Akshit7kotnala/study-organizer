@@ -240,6 +240,16 @@
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
+              <div class="btn-group" role="group">
+                <a href="{{ url_for('share_document', doc_id=d.id) }}" 
+                   class="btn btn-sm btn-outline-success" title="Share">
+                  <i class="bi bi-share"></i> Share
+                </a>
+                <a href="{{ url_for('document_comments', doc_id=d.id) }}" 
+                   class="btn btn-sm btn-outline-info" title="Comments">
+                  <i class="bi bi-chat-dots"></i> Comments
+                </a>
+              </div>
             </div>
           </div>
         </div>
