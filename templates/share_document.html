@@ -1,132 +1,164 @@
-{% extends "base.html" %}
-{% block title %}Share Document - Study Organizer{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Share Document - Study Organizer{%
+endblock %} {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-share"></i> Share Document
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <!-- Document Info -->
-                    <div class="alert alert-info">
-                        <h5 class="alert-heading">
-                            <i class="{{ doc.file_icon() }}"></i> {{ doc.original_filename }}
-                        </h5>
-                        <p class="mb-0">
-                            <strong>Subject:</strong> {{ doc.subject }} | 
-                            <strong>Year:</strong> {{ doc.year }}
-                        </p>
-                    </div>
-
-                    <!-- Share Form -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Share with User</h5>
-                            <form method="POST">
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">User Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" 
-                                           placeholder="user@example.com" required>
-                                    <div class="form-text">Enter the email address of the user you want to share with</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="permission" class="form-label">Permission Level</label>
-                                    <select class="form-select" id="permission" name="permission" required>
-                                        <option value="viewer">Viewer - Can view only</option>
-                                        <option value="editor">Editor - Can view and comment</option>
-                                        <option value="admin">Admin - Full access</option>
-                                    </select>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-share"></i> Share Document
-                                </button>
-                                <a href="{{ url_for('year_view', year=doc.year) }}" class="btn btn-secondary">
-                                    <i class="bi bi-arrow-left"></i> Cancel
-                                </a>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Current Shares -->
-                    {% if shares %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Shared With</h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>User</th>
-                                            <th>Permission</th>
-                                            <th>Shared On</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for share in shares %}
-                                        <tr>
-                                            <td>
-                                                {% if share.recipient.profile_pic %}
-                                                <img src="{{ share.recipient.profile_pic }}" 
-                                                     alt="{{ share.recipient.name }}" 
-                                                     class="rounded-circle me-2" 
-                                                     style="width: 32px; height: 32px;">
-                                                {% else %}
-                                                <i class="bi bi-person-circle me-2"></i>
-                                                {% endif %}
-                                                <strong>{{ share.recipient.name or share.recipient.email }}</strong>
-                                                <br>
-                                                <small class="text-muted">{{ share.recipient.email }}</small>
-                                            </td>
-                                            <td>
-                                                {% if share.permission == 'viewer' %}
-                                                <span class="badge bg-info">
-                                                    <i class="bi bi-eye"></i> Viewer
-                                                </span>
-                                                {% elif share.permission == 'editor' %}
-                                                <span class="badge bg-warning">
-                                                    <i class="bi bi-pencil"></i> Editor
-                                                </span>
-                                                {% else %}
-                                                <span class="badge bg-danger">
-                                                    <i class="bi bi-shield-check"></i> Admin
-                                                </span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <small>{{ share.created_at.strftime('%b %d, %Y') }}</small>
-                                            </td>
-                                            <td>
-                                                <form method="POST" action="{{ url_for('revoke_share', share_id=share.id) }}" 
-                                                      style="display: inline;" 
-                                                      onsubmit="return confirm('Revoke access for this user?');">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        <i class="bi bi-x-circle"></i> Revoke
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="alert alert-secondary">
-                        <i class="bi bi-info-circle"></i> This document hasn't been shared with anyone yet.
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="bi bi-share"></i> Share Document</h4>
         </div>
+        <div class="card-body">
+          <!-- Document Info -->
+          <div class="alert alert-info">
+            <h5 class="alert-heading">
+              <i class="{{ doc.file_icon() }}"></i> {{ doc.original_filename }}
+            </h5>
+            <p class="mb-0">
+              <strong>Subject:</strong> {{ doc.subject }} |
+              <strong>Year:</strong> {{ doc.year }}
+            </p>
+          </div>
+
+          <!-- Share Form -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title">Share with User</h5>
+              <form method="POST">
+                <div class="mb-3">
+                  <label for="email" class="form-label">User Email</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    name="email"
+                    placeholder="user@example.com"
+                    required
+                  />
+                  <div class="form-text">
+                    Enter the email address of the user you want to share with
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="permission" class="form-label"
+                    >Permission Level</label
+                  >
+                  <select
+                    class="form-select"
+                    id="permission"
+                    name="permission"
+                    required
+                  >
+                    <option value="viewer">Viewer - Can view only</option>
+                    <option value="editor">
+                      Editor - Can view and comment
+                    </option>
+                    <option value="admin">Admin - Full access</option>
+                  </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-share"></i> Share Document
+                </button>
+                <a
+                  href="{{ url_for('year_view', year=doc.year) }}"
+                  class="btn btn-secondary"
+                >
+                  <i class="bi bi-arrow-left"></i> Cancel
+                </a>
+              </form>
+            </div>
+          </div>
+
+          <!-- Current Shares -->
+          {% if shares %}
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Shared With</h5>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Permission</th>
+                      <th>Shared On</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for share in shares %}
+                    <tr>
+                      <td>
+                        {% if share.recipient.profile_pic %}
+                        <img
+                          src="{{ share.recipient.profile_pic }}"
+                          alt="{{ share.recipient.name }}"
+                          class="rounded-circle me-2"
+                          style="width: 32px; height: 32px"
+                        />
+                        {% else %}
+                        <i class="bi bi-person-circle me-2"></i>
+                        {% endif %}
+                        <strong
+                          >{{ share.recipient.name or share.recipient.email
+                          }}</strong
+                        >
+                        <br />
+                        <small class="text-muted"
+                          >{{ share.recipient.email }}</small
+                        >
+                      </td>
+                      <td>
+                        {% if share.permission == 'viewer' %}
+                        <span class="badge bg-info">
+                          <i class="bi bi-eye"></i> Viewer
+                        </span>
+                        {% elif share.permission == 'editor' %}
+                        <span class="badge bg-warning">
+                          <i class="bi bi-pencil"></i> Editor
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger">
+                          <i class="bi bi-shield-check"></i> Admin
+                        </span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <small
+                          >{{ share.created_at.strftime('%b %d, %Y') }}</small
+                        >
+                      </td>
+                      <td>
+                        <form
+                          method="POST"
+                          action="{{ url_for('revoke_share', share_id=share.id) }}"
+                          style="display: inline"
+                          onsubmit="return confirm('Revoke access for this user?');"
+                        >
+                          <button
+                            type="submit"
+                            class="btn btn-sm btn-outline-danger"
+                          >
+                            <i class="bi bi-x-circle"></i> Revoke
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="alert alert-secondary">
+            <i class="bi bi-info-circle"></i> This document hasn't been shared
+            with anyone yet.
+          </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

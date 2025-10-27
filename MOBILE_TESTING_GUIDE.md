@@ -5,6 +5,7 @@
 ### Method 1: Browser DevTools (Recommended)
 
 1. **Chrome/Edge:**
+
    - Press `F12` or `Ctrl+Shift+I`
    - Click the device toggle icon (or press `Ctrl+Shift+M`)
    - Select different devices: iPhone SE, iPhone 12, iPad, etc.
@@ -18,7 +19,9 @@
 ### Method 2: Real Device Testing
 
 Visit your app on your phone:
-- **Local Development**: 
+
+- **Local Development**:
+
   - Find your computer's IP: Run `ipconfig` in PowerShell
   - On your phone, visit: `http://YOUR_IP:5000`
   - Make sure both devices are on the same WiFi
@@ -30,6 +33,7 @@ Visit your app on your phone:
 ## Mobile Breakpoints Implemented
 
 ### Small Mobile (320px - 575px)
+
 - ✅ Single column layout
 - ✅ Larger touch targets (min 44px)
 - ✅ Stacked navigation
@@ -38,17 +42,20 @@ Visit your app on your phone:
 - ✅ Compact badges and cards
 
 ### Mobile (576px - 767px)
+
 - ✅ Optimized navigation
 - ✅ Responsive forms
 - ✅ Stacked button groups
 - ✅ Adjusted padding/margins
 
 ### Tablet (768px - 991px)
+
 - ✅ 2-column layouts
 - ✅ Condensed navbar
 - ✅ Medium-sized cards
 
 ### Desktop (992px+)
+
 - ✅ Full multi-column layouts
 - ✅ Expanded navigation
 - ✅ Hover effects
@@ -59,12 +66,14 @@ Visit your app on your phone:
 ## Features Optimized for Mobile
 
 ### Navigation
+
 - ✅ Collapsible hamburger menu
 - ✅ Stacked menu items
 - ✅ Full-width search bar on mobile
 - ✅ Touch-friendly links (44px min height)
 
 ### Document Cards
+
 - ✅ Responsive grid (3 cols → 2 cols → 1 col)
 - ✅ Scalable thumbnails
 - ✅ Stacked action buttons
@@ -72,6 +81,7 @@ Visit your app on your phone:
 - ✅ Touch-friendly buttons
 
 ### Collections
+
 - ✅ Responsive collection cards
 - ✅ Stacked headers on mobile
 - ✅ Full-width buttons
@@ -79,6 +89,7 @@ Visit your app on your phone:
 - ✅ Mobile-friendly modals
 
 ### Forms
+
 - ✅ Full-width inputs
 - ✅ Stacked form fields
 - ✅ Touch-optimized controls (min 44px)
@@ -86,6 +97,7 @@ Visit your app on your phone:
 - ✅ Mobile-friendly date pickers
 
 ### Filters & Search
+
 - ✅ Stacked filter controls
 - ✅ Full-width dropdowns
 - ✅ Mobile-optimized pagination
@@ -96,6 +108,7 @@ Visit your app on your phone:
 ## Testing Checklist
 
 ### ✅ Navigation Testing
+
 - [ ] Hamburger menu opens/closes
 - [ ] All links are clickable
 - [ ] Search bar is accessible
@@ -103,6 +116,7 @@ Visit your app on your phone:
 - [ ] Logout button visible
 
 ### ✅ Document Browsing
+
 - [ ] Year cards display properly
 - [ ] Document lists are readable
 - [ ] Thumbnails load correctly
@@ -110,6 +124,7 @@ Visit your app on your phone:
 - [ ] Pagination works
 
 ### ✅ Upload & Forms
+
 - [ ] Upload form is usable
 - [ ] File selection works
 - [ ] Drag-and-drop zone functions
@@ -117,6 +132,7 @@ Visit your app on your phone:
 - [ ] Submit buttons work
 
 ### ✅ Collections
+
 - [ ] Collection cards display nicely
 - [ ] Create collection form works
 - [ ] Add documents modal functions
@@ -124,6 +140,7 @@ Visit your app on your phone:
 - [ ] Remove buttons are accessible
 
 ### ✅ Search & Filter
+
 - [ ] Search bar is usable
 - [ ] Filter dropdowns work
 - [ ] Results display properly
@@ -131,6 +148,7 @@ Visit your app on your phone:
 - [ ] Clear filters works
 
 ### ✅ Performance
+
 - [ ] Pages load quickly
 - [ ] Images are optimized
 - [ ] No horizontal scrolling
@@ -142,28 +160,38 @@ Visit your app on your phone:
 ## Common Mobile Issues & Fixes
 
 ### Issue: Text Too Small
+
 **Fix**: Already implemented responsive font sizes
+
 - Base: 16px
 - Small mobile: 14px for body, scaled headers
 
 ### Issue: Buttons Too Small to Tap
+
 **Fix**: Minimum 44px touch targets implemented
+
 ```css
 @media (hover: none) and (pointer: coarse) {
-  .btn, .nav-link, a {
+  .btn,
+  .nav-link,
+  a {
     min-height: 44px;
   }
 }
 ```
 
 ### Issue: Horizontal Scrolling
+
 **Fix**: All containers use responsive widths
+
 - No fixed widths
 - `max-width: 100%` on images
 - `overflow-x: hidden` when needed
 
 ### Issue: Modal Too Large
+
 **Fix**: Modal sizing adjusted
+
 ```css
 @media (max-width: 768px) {
   .modal-dialog {
@@ -173,10 +201,13 @@ Visit your app on your phone:
 ```
 
 ### Issue: Form Fields Too Narrow
+
 **Fix**: Full-width forms on mobile
+
 ```css
 @media (max-width: 768px) {
-  .form-control, .form-select {
+  .form-control,
+  .form-select {
     width: 100%;
   }
 }
@@ -187,18 +218,21 @@ Visit your app on your phone:
 ## Performance Optimization
 
 ### Images
+
 - ✅ Thumbnails generated server-side
 - ✅ Responsive image sizing
 - ✅ Lazy loading (browser native)
 - ✅ Proper aspect ratios
 
 ### CSS
+
 - ✅ Mobile-first approach
 - ✅ Minimal custom CSS
 - ✅ Bootstrap 5.3 (optimized)
 - ✅ No CSS frameworks bloat
 
 ### JavaScript
+
 - ✅ Minimal JS usage
 - ✅ No heavy libraries
 - ✅ Async loading
@@ -216,6 +250,7 @@ Run Lighthouse in Chrome DevTools:
 4. Run audit
 
 **Target Scores:**
+
 - 🎯 Performance: 80+
 - 🎯 Accessibility: 90+
 - 🎯 Best Practices: 90+
@@ -226,18 +261,21 @@ Run Lighthouse in Chrome DevTools:
 ## Future Mobile Enhancements (Optional)
 
 ### Progressive Web App (PWA)
+
 - [ ] Add manifest.json
 - [ ] Implement service worker
 - [ ] Enable offline mode
 - [ ] Add to home screen
 
 ### Mobile-Specific Features
+
 - [ ] Camera capture for documents
 - [ ] Fingerprint authentication
 - [ ] Push notifications
 - [ ] Offline sync
 
 ### Performance
+
 - [ ] Image CDN
 - [ ] Lazy loading
 - [ ] Code splitting
@@ -248,12 +286,14 @@ Run Lighthouse in Chrome DevTools:
 ## Browser Compatibility
 
 ### ✅ Tested & Supported
+
 - Chrome 90+ (Desktop & Mobile)
 - Firefox 88+ (Desktop & Mobile)
 - Safari 14+ (Desktop & Mobile)
 - Edge 90+ (Desktop & Mobile)
 
 ### ⚠️ Limited Support
+
 - IE 11 (Not recommended)
 - Older Android browsers (<5.0)
 
@@ -275,11 +315,13 @@ Run Lighthouse in Chrome DevTools:
 ## Testing Tools
 
 ### Online Tools
+
 - **Google Mobile-Friendly Test**: https://search.google.com/test/mobile-friendly
 - **Responsive Design Checker**: https://responsivedesignchecker.com
 - **BrowserStack**: https://www.browserstack.com (real devices)
 
 ### Browser Extensions
+
 - **Responsive Viewer** (Chrome)
 - **Viewport Resizer** (Firefox)
 - **Window Resizer** (Chrome)
@@ -291,12 +333,14 @@ Run Lighthouse in Chrome DevTools:
 ### Test on Mobile Device (Same Network)
 
 1. **Find your IP**:
+
    ```powershell
    ipconfig
    # Look for IPv4 Address (e.g., 192.168.1.100)
    ```
 
 2. **Run Flask app**:
+
    ```powershell
    python app.py
    ```
@@ -306,6 +350,7 @@ Run Lighthouse in Chrome DevTools:
 ### Test Different Sizes in Browser
 
 Press `F12` → Toggle Device Toolbar → Select:
+
 - iPhone SE (375x667)
 - iPhone 12 Pro (390x844)
 - iPad (768x1024)

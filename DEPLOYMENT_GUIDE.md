@@ -5,6 +5,7 @@ This guide will help you deploy your Study Organizer application to the web for 
 ## Recommended Platform: Render.com (FREE)
 
 **Why Render.com?**
+
 - ✅ **100% FREE** for students (no credit card required!)
 - ✅ Free PostgreSQL database included
 - ✅ Automatic HTTPS
@@ -158,6 +159,7 @@ PYTHON_VERSION=3.11.9
 ### Optional - Cloud Storage Variables:
 
 **Option A: Azure Blob Storage (FREE for students)**
+
 ```bash
 STORAGE_TYPE=azure
 AZURE_STORAGE_ACCOUNT_NAME=your-storage-account-name
@@ -166,6 +168,7 @@ AZURE_CONTAINER_NAME=study-documents
 ```
 
 **Option B: AWS S3**
+
 ```bash
 STORAGE_TYPE=s3
 AWS_ACCESS_KEY_ID=your-aws-access-key
@@ -175,9 +178,11 @@ S3_BUCKET_NAME=your-bucket-name
 ```
 
 **Option C: Local Storage (Not Recommended)**
+
 ```bash
 STORAGE_TYPE=local
 ```
+
 ⚠️ Note: Render's free tier has ephemeral storage - files will be deleted on each deploy!
 
 ---
@@ -268,19 +273,24 @@ If you need to manually create tables, you can use Render's Shell:
 ## Monitoring & Maintenance
 
 ### View Logs
+
 - Go to your Render web service
 - Click **"Logs"** tab to see real-time logs
 
 ### Automatic Deploys
+
 - Every time you push to GitHub, Render will automatically rebuild and deploy
 - Takes 3-5 minutes per deploy
 
 ### Database Backups
+
 - Render automatically backs up your PostgreSQL database
 - Free tier: 7 days of backups
 
 ### Upgrade Plans (Optional)
+
 If you outgrow the free tier:
+
 - **Web Service**: $7/month (better performance, no sleep)
 - **Database**: $7/month (more storage, backups)
 
@@ -289,23 +299,28 @@ If you outgrow the free tier:
 ## Troubleshooting
 
 ### "Application Error" on first visit
+
 - Wait 1-2 minutes for the app to wake up (free tier sleeps after inactivity)
 - Check logs in Render dashboard
 
 ### Database Connection Error
+
 - Verify `DATABASE_URL` environment variable is set correctly
 - Make sure it starts with `postgresql://` (not `postgres://`)
 
 ### OAuth Error / Redirect URI Mismatch
+
 - Double-check Google OAuth redirect URI matches your Render URL
 - Format: `https://your-app-name.onrender.com/callback`
 
 ### Files Not Uploading
+
 - If using local storage: **NOT RECOMMENDED** - files are deleted on redeploy
 - Switch to Azure Blob Storage or AWS S3
 - Verify storage credentials in environment variables
 
 ### App is Slow
+
 - Free tier sleeps after 15 minutes of inactivity
 - First request after sleep takes 30-60 seconds
 - Upgrade to paid plan ($7/month) for 24/7 uptime
@@ -315,6 +330,7 @@ If you outgrow the free tier:
 ## Security Best Practices
 
 ### ✅ DO:
+
 - Use strong, random `SECRET_KEY`
 - Keep `.env` file private (never commit to Git)
 - Use HTTPS (automatic on Render)
@@ -322,6 +338,7 @@ If you outgrow the free tier:
 - Use cloud storage for production files
 
 ### ❌ DON'T:
+
 - Commit `.env` file to Git
 - Use default secret keys
 - Store files locally in production
@@ -334,21 +351,25 @@ If you outgrow the free tier:
 If Render doesn't work for you, here are alternatives:
 
 ### 1. Railway.app
+
 - **Free**: $5/month credit
 - Similar to Render
 - https://railway.app
 
 ### 2. Fly.io
+
 - **Free**: Limited resources
 - Good for small apps
 - https://fly.io
 
 ### 3. PythonAnywhere
+
 - **Free**: Limited but forever free
 - Easier setup
 - https://www.pythonanywhere.com
 
 ### 4. Azure App Service (with Student Credits)
+
 - **$100/year FREE** with student pack
 - More powerful
 - Requires more configuration

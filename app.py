@@ -25,6 +25,18 @@ from botocore.exceptions import ClientError
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 from azure.core.exceptions import AzureError
 from datetime import timedelta
+import openai
+from openai import OpenAI
+import PyPDF2
+import pytesseract
+from docx import Document as DocxDocument
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import re
+import io
 
 # Load environment variables from .env file
 load_dotenv()
@@ -105,6 +117,40 @@ if app.config['STORAGE_TYPE'] == 'azure' and app.config['AZURE_STORAGE_ACCOUNT_N
         print(f"✗ Failed to initialize Azure Blob Storage: {e}")
         print("  Falling back to local storage")
         app.config['STORAGE_TYPE'] = 'local'
+
+# ============================================================================
+# AI Configuration
+# ============================================================================
+
+# OpenAI Configuration
+app.config['OPENAI_API_KEY'] = os.environ.get('OPENAI_API_KEY', '')
+if app.config['OPENAI_API_KEY']:
+    openai_client = OpenAI(api_key=app.config['OPENAI_API_KEY'])
+    print(f"✓ OpenAI client initialized")
+else:
+    openai_client = None
+    print(f"⚠ OpenAI API key not found - AI features will be disabled")
+
+# Tesseract OCR Configuration
+app.config['TESSERACT_CMD'] = os.environ.get('TESSERACT_CMD', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
+if os.path.exists(app.config['TESSERACT_CMD']):
+    pytesseract.pytesseract.tesseract_cmd = app.config['TESSERACT_CMD']
+    print(f"✓ Tesseract OCR configured")
+else:
+    print(f"⚠ Tesseract OCR not found at {app.config['TESSERACT_CMD']} - OCR features will be disabled")
+
+# AI Features Configuration
+app.config['AI_SUMMARY_MAX_LENGTH'] = int(os.environ.get('AI_SUMMARY_MAX_LENGTH', 500))
+app.config['AI_TAGS_COUNT'] = int(os.environ.get('AI_TAGS_COUNT', 5))
+app.config['OCR_LANGUAGE'] = os.environ.get('OCR_LANGUAGE', 'eng')
+app.config['SEARCH_RESULTS_LIMIT'] = int(os.environ.get('SEARCH_RESULTS_LIMIT', 50))
+app.config['RECOMMENDATIONS_COUNT'] = int(os.environ.get('RECOMMENDATIONS_COUNT', 5))
+
+# Initialize NLTK stopwords
+try:
+    stop_words = set(stopwords.words('english'))
+except:
+    stop_words = set()
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -210,6 +256,13 @@ class Document(db.Model):
     thumbnail_filename = db.Column(db.String(512), nullable=True)  # Thumbnail image
     storage_type = db.Column(db.String(16), default='local', nullable=False)  # 'local' or 's3'
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # AI-powered features
+    summary = db.Column(db.Text, nullable=True)  # AI-generated summary
+    extracted_text = db.Column(db.Text, nullable=True)  # Extracted text from PDF/images (OCR)
+    ai_tags = db.Column(db.String(512), nullable=True)  # AI-suggested tags (comma-separated)
+    content_vector = db.Column(db.Text, nullable=True)  # TF-IDF vector for recommendations (JSON)
+    last_analyzed = db.Column(db.DateTime, nullable=True)  # Last AI analysis timestamp
     
     # Many-to-many relationship with Tag
     tag_objects = db.relationship('Tag', secondary=document_tags, back_populates='documents')
@@ -846,6 +899,250 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
+
+
+# ============================================================================
+# AI Helper Functions
+# ============================================================================
+
+def extract_text_from_pdf(file_path):
+    """Extract text from PDF file."""
+    try:
+        text = ""
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n"
+        return text.strip()
+    except Exception as e:
+        print(f"Error extracting text from PDF: {e}")
+        return None
+
+
+def extract_text_from_docx(file_path):
+    """Extract text from DOCX file."""
+    try:
+        doc = DocxDocument(file_path)
+        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        return text.strip()
+    except Exception as e:
+        print(f"Error extracting text from DOCX: {e}")
+        return None
+
+
+def extract_text_from_image(file_path):
+    """Extract text from image using OCR."""
+    if not os.path.exists(app.config['TESSERACT_CMD']):
+        print("Tesseract OCR not available")
+        return None
+    
+    try:
+        image = Image.open(file_path)
+        text = pytesseract.image_to_string(image, lang=app.config['OCR_LANGUAGE'])
+        return text.strip()
+    except Exception as e:
+        print(f"Error extracting text from image: {e}")
+        return None
+
+
+def extract_text_from_document(file_path, mimetype):
+    """Extract text from document based on file type."""
+    if mimetype == 'application/pdf':
+        return extract_text_from_pdf(file_path)
+    elif mimetype == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        return extract_text_from_docx(file_path)
+    elif mimetype.startswith('image/'):
+        return extract_text_from_image(file_path)
+    return None
+
+
+def generate_summary(text, max_length=None):
+    """Generate AI summary of text using OpenAI."""
+    if not openai_client or not text:
+        return None
+    
+    if max_length is None:
+        max_length = app.config['AI_SUMMARY_MAX_LENGTH']
+    
+    try:
+        # Truncate text if too long (OpenAI has token limits)
+        max_input_chars = 12000  # ~3000 tokens
+        if len(text) > max_input_chars:
+            text = text[:max_input_chars] + "..."
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that summarizes academic documents concisely."},
+                {"role": "user", "content": f"Summarize the following document in {max_length} characters or less:\n\n{text}"}
+            ],
+            max_tokens=200,
+            temperature=0.5
+        )
+        
+        summary = response.choices[0].message.content.strip()
+        return summary[:max_length]
+    except Exception as e:
+        print(f"Error generating summary: {e}")
+        return None
+
+
+def generate_smart_tags(text, subject=None):
+    """Generate smart tags using OpenAI and NLP."""
+    if not text:
+        return []
+    
+    tags = []
+    
+    # Method 1: Extract key terms using NLP
+    try:
+        # Tokenize and remove stopwords
+        words = word_tokenize(text.lower())
+        words = [w for w in words if w.isalnum() and w not in stop_words and len(w) > 3]
+        
+        # Get most common words
+        from collections import Counter
+        word_freq = Counter(words)
+        common_words = [word for word, _ in word_freq.most_common(10)]
+        tags.extend(common_words[:3])
+    except:
+        pass
+    
+    # Method 2: Use OpenAI for better tags
+    if openai_client and len(text) > 50:
+        try:
+            # Truncate text if too long
+            max_input_chars = 6000
+            if len(text) > max_input_chars:
+                text = text[:max_input_chars] + "..."
+            
+            prompt = f"Extract {app.config['AI_TAGS_COUNT']} relevant keywords/tags from this academic document."
+            if subject:
+                prompt += f" Subject: {subject}."
+            prompt += f"\n\nDocument:\n{text}\n\nProvide only the tags, comma-separated:"
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that extracts relevant keywords from academic content."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=50,
+                temperature=0.3
+            )
+            
+            ai_tags = response.choices[0].message.content.strip()
+            # Parse comma-separated tags
+            ai_tags_list = [tag.strip() for tag in ai_tags.split(',') if tag.strip()]
+            tags.extend(ai_tags_list)
+        except Exception as e:
+            print(f"Error generating AI tags: {e}")
+    
+    # Remove duplicates and limit count
+    tags = list(dict.fromkeys(tags))  # Preserve order while removing duplicates
+    return tags[:app.config['AI_TAGS_COUNT']]
+
+
+def analyze_document(document_id):
+    """Run full AI analysis on a document: extract text, generate summary, generate tags."""
+    document = Document.query.get(document_id)
+    if not document:
+        return False
+    
+    # Get file path
+    if document.storage_type == 'local':
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], document.stored_filename)
+        if not os.path.exists(file_path):
+            return False
+    else:
+        # For S3/Azure, would need to download file first
+        return False
+    
+    # Extract text
+    extracted_text = extract_text_from_document(file_path, document.mimetype)
+    if extracted_text:
+        document.extracted_text = extracted_text
+        
+        # Generate summary
+        summary = generate_summary(extracted_text)
+        if summary:
+            document.summary = summary
+        
+        # Generate smart tags
+        smart_tags = generate_smart_tags(extracted_text, document.subject)
+        if smart_tags:
+            document.ai_tags = ', '.join(smart_tags)
+        
+        # Update timestamp
+        document.last_analyzed = datetime.utcnow()
+        
+        db.session.commit()
+        return True
+    
+    return False
+
+
+def search_documents_fulltext(query, user_id, limit=None):
+    """Search documents by full-text search in extracted text and summaries."""
+    if limit is None:
+        limit = app.config['SEARCH_RESULTS_LIMIT']
+    
+    # Search in extracted_text, summary, original_filename, subject, tags
+    search_pattern = f"%{query}%"
+    
+    results = Document.query.filter(
+        Document.user_id == user_id,
+        db.or_(
+            Document.extracted_text.ilike(search_pattern),
+            Document.summary.ilike(search_pattern),
+            Document.original_filename.ilike(search_pattern),
+            Document.subject.ilike(search_pattern),
+            Document.tags.ilike(search_pattern),
+            Document.ai_tags.ilike(search_pattern)
+        )
+    ).limit(limit).all()
+    
+    return results
+
+
+def get_document_recommendations(document_id, count=None):
+    """Get recommended documents based on content similarity."""
+    if count is None:
+        count = app.config['RECOMMENDATIONS_COUNT']
+    
+    document = Document.query.get(document_id)
+    if not document or not document.extracted_text:
+        return []
+    
+    # Get all documents from same user with extracted text
+    all_docs = Document.query.filter(
+        Document.user_id == document.user_id,
+        Document.id != document_id,
+        Document.extracted_text.isnot(None)
+    ).all()
+    
+    if not all_docs:
+        return []
+    
+    try:
+        # Create TF-IDF vectors
+        vectorizer = TfidfVectorizer(max_features=100, stop_words='english')
+        
+        # Prepare texts
+        texts = [document.extracted_text] + [doc.extracted_text for doc in all_docs]
+        tfidf_matrix = vectorizer.fit_transform(texts)
+        
+        # Calculate cosine similarity
+        similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+        
+        # Get top recommendations
+        top_indices = similarities.argsort()[-count:][::-1]
+        recommendations = [all_docs[i] for i in top_indices if similarities[i] > 0.1]
+        
+        return recommendations
+    except Exception as e:
+        print(f"Error getting recommendations: {e}")
+        return []
 
 
 @app.route('/')
@@ -2091,6 +2388,172 @@ def mark_notification_read(notif_id):
     notif.read = True
     db.session.commit()
     return jsonify({'success': True})
+
+
+# ============================================================================
+# AI FEATURES ROUTES
+# ============================================================================
+
+@app.route('/document/<int:doc_id>/analyze', methods=['POST'])
+@login_required
+def analyze_document_route(doc_id):
+    """Trigger AI analysis for a document."""
+    document = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    if not openai_client:
+        return jsonify({'success': False, 'error': 'AI features not configured'}), 400
+    
+    # Run analysis in the request (in production, use background task)
+    success = analyze_document(doc_id)
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'summary': document.summary,
+            'ai_tags': document.ai_tags,
+            'extracted_text_length': len(document.extracted_text) if document.extracted_text else 0
+        })
+    else:
+        return jsonify({'success': False, 'error': 'Analysis failed'}), 500
+
+
+@app.route('/document/<int:doc_id>/summary')
+@login_required
+def get_document_summary(doc_id):
+    """Get or generate document summary."""
+    document = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    if document.summary:
+        return jsonify({'success': True, 'summary': document.summary})
+    
+    # Generate summary if not exists
+    if document.extracted_text:
+        summary = generate_summary(document.extracted_text)
+        if summary:
+            document.summary = summary
+            db.session.commit()
+            return jsonify({'success': True, 'summary': summary})
+    
+    return jsonify({'success': False, 'error': 'No summary available'}), 404
+
+
+@app.route('/document/<int:doc_id>/smart-tags')
+@login_required
+def get_smart_tags(doc_id):
+    """Get AI-generated smart tags for a document."""
+    document = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    if document.ai_tags:
+        tags = [tag.strip() for tag in document.ai_tags.split(',')]
+        return jsonify({'success': True, 'tags': tags})
+    
+    # Generate tags if not exists
+    if document.extracted_text:
+        smart_tags = generate_smart_tags(document.extracted_text, document.subject)
+        if smart_tags:
+            document.ai_tags = ', '.join(smart_tags)
+            db.session.commit()
+            return jsonify({'success': True, 'tags': smart_tags})
+    
+    return jsonify({'success': False, 'error': 'No tags available'}), 404
+
+
+@app.route('/document/<int:doc_id>/extracted-text')
+@login_required
+def get_extracted_text(doc_id):
+    """Get extracted text from document."""
+    document = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    if document.extracted_text:
+        return jsonify({
+            'success': True,
+            'text': document.extracted_text,
+            'length': len(document.extracted_text)
+        })
+    
+    return jsonify({'success': False, 'error': 'No extracted text available'}), 404
+
+
+@app.route('/search')
+@login_required
+def search_documents():
+    """Full-text search across documents."""
+    query = request.args.get('q', '').strip()
+    
+    if not query:
+        return render_template('search.html', query='', results=[])
+    
+    # Perform full-text search
+    results = search_documents_fulltext(query, current_user.id)
+    
+    return render_template('search.html', query=query, results=results)
+
+
+@app.route('/api/search')
+@login_required
+def api_search_documents():
+    """API endpoint for document search."""
+    query = request.args.get('q', '').strip()
+    
+    if not query:
+        return jsonify({'success': False, 'error': 'Query required'}), 400
+    
+    results = search_documents_fulltext(query, current_user.id)
+    
+    results_list = []
+    for doc in results:
+        results_list.append({
+            'id': doc.id,
+            'original_filename': doc.original_filename,
+            'year': doc.year,
+            'subject': doc.subject,
+            'summary': doc.summary,
+            'upload_date': doc.upload_date.strftime('%Y-%m-%d')
+        })
+    
+    return jsonify({'success': True, 'results': results_list, 'count': len(results_list)})
+
+
+@app.route('/document/<int:doc_id>/recommendations')
+@login_required
+def document_recommendations(doc_id):
+    """Get recommended documents based on similarity."""
+    document = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    recommendations = get_document_recommendations(doc_id)
+    
+    recommendations_list = []
+    for doc in recommendations:
+        recommendations_list.append({
+            'id': doc.id,
+            'original_filename': doc.original_filename,
+            'year': doc.year,
+            'subject': doc.subject,
+            'summary': doc.summary,
+            'thumbnail_url': url_for('thumbnail_file', filename=doc.thumbnail_filename) if doc.thumbnail_filename else None
+        })
+    
+    return jsonify({'success': True, 'recommendations': recommendations_list})
+
+
+@app.route('/ai-features')
+@login_required
+def ai_features_page():
+    """AI features showcase page."""
+    # Get some stats
+    total_docs = Document.query.filter_by(user_id=current_user.id).count()
+    analyzed_docs = Document.query.filter_by(user_id=current_user.id).filter(Document.extracted_text.isnot(None)).count()
+    summarized_docs = Document.query.filter_by(user_id=current_user.id).filter(Document.summary.isnot(None)).count()
+    
+    stats = {
+        'total_documents': total_docs,
+        'analyzed_documents': analyzed_docs,
+        'summarized_documents': summarized_docs,
+        'ai_enabled': openai_client is not None,
+        'ocr_enabled': os.path.exists(app.config['TESSERACT_CMD'])
+    }
+    
+    return render_template('ai_features.html', stats=stats)
 
 
 if __name__ == '__main__':

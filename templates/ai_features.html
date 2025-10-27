@@ -1,0 +1,569 @@
+{% extends "base.html" %} {% block title %}AI Features - Study Organizer{%
+endblock %} {% block content %}
+<div class="container my-5">
+  <!-- Hero Section -->
+  <div class="ai-hero text-center mb-5">
+    <div class="hero-content">
+      <h1 class="display-3 fw-bold mb-3">
+        <i class="bi bi-robot me-3"></i>
+        AI-Powered Features
+      </h1>
+      <p class="lead mb-4">
+        Leverage artificial intelligence to supercharge your study workflow
+      </p>
+      {% if not stats['ai_enabled'] %}
+      <div class="alert alert-warning d-inline-block">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        OpenAI API key not configured. Some features may be limited.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-3">
+      <div class="stat-card card shadow-hover">
+        <div class="card-body text-center">
+          <div class="stat-icon mb-3">
+            <i class="bi bi-files"></i>
+          </div>
+          <h2 class="display-4 fw-bold text-gradient-primary">
+            {{ stats['total_documents'] }}
+          </h2>
+          <p class="text-muted mb-0">Total Documents</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card card shadow-hover">
+        <div class="card-body text-center">
+          <div class="stat-icon mb-3">
+            <i class="bi bi-search"></i>
+          </div>
+          <h2 class="display-4 fw-bold text-gradient-success">
+            {{ stats['analyzed_documents'] }}
+          </h2>
+          <p class="text-muted mb-0">Analyzed</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card card shadow-hover">
+        <div class="card-body text-center">
+          <div class="stat-icon mb-3">
+            <i class="bi bi-card-text"></i>
+          </div>
+          <h2 class="display-4 fw-bold text-gradient-info">
+            {{ stats['summarized_documents'] }}
+          </h2>
+          <p class="text-muted mb-0">Summarized</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card card shadow-hover">
+        <div class="card-body text-center">
+          <div class="stat-icon mb-3">
+            <i class="bi bi-lightning-charge"></i>
+          </div>
+          <h2 class="display-4 fw-bold text-gradient-warning">
+            {% if stats['total_documents'] > 0 %} {{
+            ((stats['analyzed_documents'] / stats['total_documents']) * 100) |
+            int }}% {% else %} 0% {% endif %}
+          </h2>
+          <p class="text-muted mb-0">Coverage</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Grid -->
+  <div class="features-section mb-5">
+    <h2 class="text-center mb-5">
+      <span class="text-gradient-primary">Intelligent Features</span>
+    </h2>
+
+    <div class="row g-4">
+      <!-- Document Summarization -->
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card card h-100 shadow-hover">
+          <div class="card-body">
+            <div class="feature-icon bg-gradient-primary mb-3">
+              <i class="bi bi-card-text"></i>
+            </div>
+            <h4 class="card-title">Document Summarization</h4>
+            <p class="card-text text-muted">
+              AI-powered summaries of your documents using GPT-3.5. Get the key
+              points without reading the entire document.
+            </p>
+            <ul class="feature-list">
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Automatic
+                text extraction
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Concise
+                500-char summaries
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Works with
+                PDFs & images
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <span class="badge bg-gradient-primary">
+              <i class="bi bi-stars me-1"></i>
+              OpenAI GPT-3.5
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart Tagging -->
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card card h-100 shadow-hover">
+          <div class="card-body">
+            <div class="feature-icon bg-gradient-success mb-3">
+              <i class="bi bi-tags"></i>
+            </div>
+            <h4 class="card-title">Smart Tagging</h4>
+            <p class="card-text text-muted">
+              Automatically extract relevant keywords and tags from your
+              documents using NLP and AI analysis.
+            </p>
+            <ul class="feature-list">
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Keyword
+                extraction
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i
+                >Context-aware tagging
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i
+                >Subject-specific tags
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <span class="badge bg-gradient-success">
+              <i class="bi bi-lightning me-1"></i>
+              NLTK + OpenAI
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OCR Text Extraction -->
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card card h-100 shadow-hover">
+          <div class="card-body">
+            <div class="feature-icon bg-gradient-info mb-3">
+              <i class="bi bi-image"></i>
+            </div>
+            <h4 class="card-title">OCR Text Extraction</h4>
+            <p class="card-text text-muted">
+              Extract text from images and scanned documents using Tesseract OCR
+              technology.
+            </p>
+            <ul class="feature-list">
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Image to
+                text
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Scanned PDF
+                support
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i
+                >Multi-language support
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <span class="badge bg-gradient-info">
+              <i class="bi bi-eye me-1"></i>
+              {% if stats['ocr_enabled'] %} Tesseract OCR ✓ {% else %} Tesseract
+              OCR (Not Configured) {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Search -->
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card card h-100 shadow-hover">
+          <div class="card-body">
+            <div class="feature-icon bg-gradient-warning mb-3">
+              <i class="bi bi-search"></i>
+            </div>
+            <h4 class="card-title">Intelligent Content Search</h4>
+            <p class="card-text text-muted">
+              Search within document content, summaries, and extracted text.
+              Find what you need instantly.
+            </p>
+            <ul class="feature-list">
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Full-text
+                search
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Summary
+                search
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Tag-based
+                filtering
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <a
+              href="{{ url_for('search_documents') }}"
+              class="btn btn-gradient-warning btn-sm w-100"
+            >
+              <i class="bi bi-search me-1"></i>
+              Try Search
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Study Recommendations -->
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card card h-100 shadow-hover">
+          <div class="card-body">
+            <div class="feature-icon bg-gradient-danger mb-3">
+              <i class="bi bi-lightbulb"></i>
+            </div>
+            <h4 class="card-title">Study Recommendations</h4>
+            <p class="card-text text-muted">
+              Get personalized document recommendations based on content
+              similarity using machine learning.
+            </p>
+            <ul class="feature-list">
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Content
+                similarity
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>TF-IDF
+                vectors
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Cosine
+                similarity
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <span class="badge bg-gradient-danger">
+              <i class="bi bi-cpu me-1"></i>
+              scikit-learn
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Collaboration Features -->
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card card h-100 shadow-hover">
+          <div class="card-body">
+            <div class="feature-icon bg-gradient-purple mb-3">
+              <i class="bi bi-people"></i>
+            </div>
+            <h4 class="card-title">Smart Collaboration</h4>
+            <p class="card-text text-muted">
+              AI-enhanced collaboration with intelligent sharing, comments, and
+              study group features.
+            </p>
+            <ul class="feature-list">
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Share with
+                summaries
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Tag-based
+                grouping
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success me-2"></i>Smart
+                notifications
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <a
+              href="{{ url_for('study_groups') }}"
+              class="btn btn-gradient-purple btn-sm w-100"
+            >
+              <i class="bi bi-people me-1"></i>
+              Study Groups
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How It Works -->
+  <div class="how-it-works mb-5">
+    <h2 class="text-center mb-5">
+      <span class="text-gradient-primary">How It Works</span>
+    </h2>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-icon bg-gradient-primary">
+          <i class="bi bi-upload"></i>
+        </div>
+        <div class="timeline-content">
+          <h4>1. Upload Document</h4>
+          <p class="text-muted">
+            Upload your PDF, Word document, or image file
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon bg-gradient-success">
+          <i class="bi bi-cpu"></i>
+        </div>
+        <div class="timeline-content">
+          <h4>2. AI Analysis</h4>
+          <p class="text-muted">
+            Our AI extracts text, generates summaries, and suggests tags
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon bg-gradient-info">
+          <i class="bi bi-stars"></i>
+        </div>
+        <div class="timeline-content">
+          <h4>3. Enhanced Content</h4>
+          <p class="text-muted">
+            View summaries, tags, and get recommendations
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon bg-gradient-warning">
+          <i class="bi bi-search-heart"></i>
+        </div>
+        <div class="timeline-content">
+          <h4>4. Smart Search & Discover</h4>
+          <p class="text-muted">
+            Find related content and discover new connections
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA Section -->
+  <div class="cta-section text-center">
+    <div class="card shadow-lg border-0 bg-gradient-primary text-white">
+      <div class="card-body py-5">
+        <h2 class="mb-4">Ready to Experience AI-Powered Learning?</h2>
+        <p class="lead mb-4">
+          Upload your first document and let AI do the magic!
+        </p>
+        <a href="{{ url_for('upload') }}" class="btn btn-light btn-lg px-5">
+          <i class="bi bi-upload me-2"></i>
+          Upload Document
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ai-hero {
+    padding: 3rem 0;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-rgb), 0.1) 0%,
+      rgba(var(--info-rgb), 0.1) 100%
+    );
+    border-radius: 20px;
+    margin-bottom: 3rem;
+  }
+
+  .stat-card {
+    border: none;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(
+      135deg,
+      var(--gradient-primary-start) 0%,
+      var(--gradient-primary-end) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-success {
+    background: linear-gradient(
+      135deg,
+      var(--gradient-success-start) 0%,
+      var(--gradient-success-end) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-info {
+    background: linear-gradient(
+      135deg,
+      var(--gradient-info-start) 0%,
+      var(--gradient-info-end) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-warning {
+    background: linear-gradient(
+      135deg,
+      var(--gradient-warning-start) 0%,
+      var(--gradient-warning-end) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .feature-card {
+    border: none;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-10px);
+  }
+
+  .feature-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .feature-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .feature-list li {
+    padding: 0.5rem 0;
+  }
+
+  .timeline {
+    position: relative;
+    padding: 2rem 0;
+  }
+
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(
+      180deg,
+      var(--gradient-primary-start) 0%,
+      var(--gradient-primary-end) 100%
+    );
+    transform: translateX(-50%);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin: 3rem 0;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .timeline-item:nth-child(odd) {
+    flex-direction: row-reverse;
+  }
+
+  .timeline-item:nth-child(odd) .timeline-content {
+    text-align: right;
+  }
+
+  .timeline-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    flex-shrink: 0;
+    z-index: 1;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .timeline-content {
+    flex: 1;
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .cta-section {
+    margin-top: 5rem;
+  }
+
+  @media (max-width: 768px) {
+    .timeline::before {
+      left: 40px;
+    }
+
+    .timeline-item {
+      flex-direction: row !important;
+      padding-left: 100px;
+    }
+
+    .timeline-item:nth-child(odd) .timeline-content {
+      text-align: left;
+    }
+
+    .timeline-icon {
+      position: absolute;
+      left: 0;
+    }
+  }
+</style>
+{% endblock %}

@@ -9,8 +9,12 @@ We've added comprehensive custom CSS to enhance Bootstrap's default styling, mak
 **`static/css/custom.css`** - Main custom stylesheet (1000+ lines)
 
 Linked in `templates/base.html`:
+
 ```html
-<link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/custom.css') }}"
+/>
 ```
 
 ## ✨ What's Enhanced
@@ -18,6 +22,7 @@ Linked in `templates/base.html`:
 ### 1. **Modern Design System** 🎯
 
 #### CSS Variables (Theme Support)
+
 - **Primary Colors**: Gradient-based color scheme
 - **Neutral Colors**: Comprehensive gray scale
 - **Spacing System**: Consistent spacing (xs, sm, md, lg, xl)
@@ -26,15 +31,22 @@ Linked in `templates/base.html`:
 - **Transitions**: Timing functions (fast, base, slow)
 
 #### Dark Theme Support
+
 All variables automatically adapt to dark theme:
+
 ```css
-:root { /* Light theme */ }
-[data-theme="dark"] { /* Dark theme overrides */ }
+:root {
+  /* Light theme */
+}
+[data-theme="dark"] {
+  /* Dark theme overrides */
+}
 ```
 
 ### 2. **Enhanced Components** 🧩
 
 #### Cards
+
 - **Hover Effects**: Lift animation, increased shadow
 - **Border Radius**: Rounded corners (12px)
 - **Transitions**: Smooth 200ms animations
@@ -42,6 +54,7 @@ All variables automatically adapt to dark theme:
 - **No Borders**: Clean, modern look with shadows
 
 **Features:**
+
 ```css
 .card {
   border-radius: var(--radius-lg);
@@ -56,6 +69,7 @@ All variables automatically adapt to dark theme:
 ```
 
 #### Buttons
+
 - **Gradient Backgrounds**: Primary, Success, Info, Warning, Danger
 - **Ripple Effect**: Material Design-inspired click animation
 - **Hover States**: Lift effect, enhanced shadow
@@ -63,11 +77,13 @@ All variables automatically adapt to dark theme:
 - **Outline Variants**: Hover fill with gradients
 
 **Special Effects:**
+
 - Ripple animation on click
 - 1px lift on hover
 - Shadow depth changes
 
 #### Forms
+
 - **Rounded Inputs**: 8px border radius
 - **Focus States**: Blue border + soft glow
 - **2px Borders**: More prominent boundaries
@@ -75,6 +91,7 @@ All variables automatically adapt to dark theme:
 - **Label Styling**: Semi-bold, proper spacing
 
 #### Badges
+
 - **Rounded**: 8px border radius
 - **Better Padding**: 0.375rem × 0.75rem
 - **Letter Spacing**: 0.025em for readability
@@ -83,6 +100,7 @@ All variables automatically adapt to dark theme:
 ### 3. **Collaboration-Specific Styles** 🤝
 
 #### Share Interface
+
 ```css
 .share-interface {
   background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
@@ -92,8 +110,9 @@ All variables automatically adapt to dark theme:
 ```
 
 #### Permission Badges
+
 - **Viewer**: Blue gradient
-- **Editor**: Orange gradient  
+- **Editor**: Orange gradient
 - **Admin**: Red gradient
 - **Hover Effect**: Scale 1.05
 
@@ -104,24 +123,28 @@ All variables automatically adapt to dark theme:
 ```
 
 #### User Avatars
+
 - **Circle Shape**: Perfect 40px circles
 - **Border**: 2px white border
 - **Hover**: Scale 1.1, enhanced shadow
 - **Transitions**: Smooth 150ms
 
 #### Study Group Cards
+
 - **Top Border Animation**: Gradient line appears on hover
 - **Lift Effect**: 4px translateY on hover
 - **Icon Styling**: 56px rounded squares with gradients
 - **Glass Effect Overlay**: Subtle white gradient on hover
 
 #### Comment Cards
+
 - **Left Border**: 4px colored accent
 - **Hover Animation**: Slides right 4px
 - **Author Styling**: Bold text, metadata in gray
 - **Spacing**: Comfortable padding
 
 #### Notifications
+
 - **Badge Animation**: Pulse effect (2s infinite)
 - **Bell Container**: Circular 40px background
 - **Item Hover**: Slide right, border color change
@@ -173,6 +196,7 @@ All variables automatically adapt to dark theme:
 ### 9. **Utility Classes** 🛠️
 
 #### Text Gradient
+
 ```css
 .text-gradient {
   background: var(--primary-gradient);
@@ -182,6 +206,7 @@ All variables automatically adapt to dark theme:
 ```
 
 #### Glass Effect
+
 ```css
 .glass-effect {
   background: rgba(255, 255, 255, 0.7);
@@ -190,6 +215,7 @@ All variables automatically adapt to dark theme:
 ```
 
 #### Hover Lift
+
 ```css
 .hover-lift:hover {
   transform: translateY(-4px);
@@ -225,26 +251,31 @@ All variables automatically adapt to dark theme:
 ## 🎨 Color Palette
 
 ### Primary Gradient
+
 ```css
 linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 ```
 
 ### Success Gradient
+
 ```css
 linear-gradient(135deg, #48bb78 0%, #38a169 100%)
 ```
 
 ### Info Gradient
+
 ```css
 linear-gradient(135deg, #4299e1 0%, #3182ce 100%)
 ```
 
 ### Warning Gradient
+
 ```css
 linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)
 ```
 
 ### Danger Gradient
+
 ```css
 linear-gradient(135deg, #fc8181 0%, #f56565 100%)
 ```
@@ -254,22 +285,25 @@ linear-gradient(135deg, #fc8181 0%, #f56565 100%)
 ### Mobile Breakpoints
 
 #### Tablet (≤ 768px)
+
 - Reduced padding on section cards
 - Smaller group/collection icons (48px)
 - Smaller avatars (32px)
 
 #### Mobile (≤ 576px)
+
 - Further reduced padding
 - Smaller button text (0.875rem)
 - Compact button padding
 
 ### Example:
+
 ```css
 @media (max-width: 768px) {
   .section-card {
     padding: var(--spacing-lg);
   }
-  
+
   .group-icon {
     width: 48px;
     height: 48px;
@@ -280,6 +314,7 @@ linear-gradient(135deg, #fc8181 0%, #f56565 100%)
 ## ♿ Accessibility Features
 
 ### Focus Visible
+
 ```css
 .focus-visible:focus {
   outline: 2px solid #667eea;
@@ -288,6 +323,7 @@ linear-gradient(135deg, #fc8181 0%, #f56565 100%)
 ```
 
 ### Reduced Motion
+
 ```css
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -298,17 +334,22 @@ linear-gradient(135deg, #fc8181 0%, #f56565 100%)
 ```
 
 ### ARIA Support
+
 All interactive elements maintain proper focus states and keyboard navigation.
 
 ## 🖨️ Print Styles
 
 ```css
 @media print {
-  .btn, .navbar, footer, .notification-bell {
+  .btn,
+  .navbar,
+  footer,
+  .notification-bell {
     display: none !important;
   }
-  
-  .card, .section-card {
+
+  .card,
+  .section-card {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
   }
@@ -318,30 +359,35 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ## 🎯 Key Improvements Over Default Bootstrap
 
 ### 1. **Visual Hierarchy**
+
 - ✅ Stronger shadows for depth
 - ✅ Gradient backgrounds for emphasis
 - ✅ Consistent spacing system
 - ✅ Better border radius values
 
 ### 2. **Interactivity**
+
 - ✅ Hover effects on all interactive elements
 - ✅ Smooth transitions (150-300ms)
 - ✅ Ripple effect on buttons
 - ✅ Lift animations
 
 ### 3. **Modern Aesthetics**
+
 - ✅ Gradient-based color scheme
 - ✅ Rounded corners everywhere
 - ✅ Glass morphism effects
 - ✅ Subtle animations
 
 ### 4. **Dark Theme**
+
 - ✅ Full dark mode support
 - ✅ Automatic variable switching
 - ✅ Maintains contrast ratios
 - ✅ Preserves accessibility
 
 ### 5. **Consistency**
+
 - ✅ Unified design tokens (CSS variables)
 - ✅ Predictable spacing
 - ✅ Consistent timing functions
@@ -360,6 +406,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ## 🚀 Performance
 
 ### Optimizations
+
 - ✅ CSS variables for theme switching (no JavaScript)
 - ✅ Hardware-accelerated transforms
 - ✅ Efficient selectors
@@ -367,6 +414,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 - ✅ No !important overuse
 
 ### Loading
+
 - ✅ Single CSS file
 - ✅ Minification-ready
 - ✅ No external dependencies
@@ -377,6 +425,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ### In Templates
 
 #### Apply Section Card
+
 ```html
 <div class="section-card">
   <h4 class="section-title">Your Title</h4>
@@ -385,11 +434,13 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ```
 
 #### Use Gradient Text
+
 ```html
 <h1 class="text-gradient">Study Organizer</h1>
 ```
 
 #### Glass Effect
+
 ```html
 <div class="glass-effect p-4">
   <!-- Content with glass morphism -->
@@ -397,6 +448,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ```
 
 #### Hover Lift
+
 ```html
 <div class="card hover-lift">
   <!-- Card content -->
@@ -406,6 +458,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ### Custom Classes
 
 #### Permission Badges
+
 ```html
 <span class="permission-badge permission-viewer">
   <i class="bi bi-eye"></i> Viewer
@@ -413,11 +466,13 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ```
 
 #### User Avatar
+
 ```html
-<img src="..." class="user-avatar" alt="User">
+<img src="..." class="user-avatar" alt="User" />
 ```
 
 #### Group/Collection Icon
+
 ```html
 <div class="group-icon" data-color="#667eea">
   <i class="bi bi-people-fill"></i>
@@ -425,6 +480,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ```
 
 #### Comment Card
+
 ```html
 <div class="comment-card">
   <div class="comment-author">John Doe</div>
@@ -436,6 +492,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ## 💡 Best Practices
 
 ### DO ✅
+
 - Use CSS variables for consistency
 - Apply hover effects for interactivity
 - Maintain spacing system
@@ -443,6 +500,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 - Use gradient backgrounds for emphasis
 
 ### DON'T ❌
+
 - Override with inline styles
 - Use arbitrary spacing values
 - Mix shadow depths inconsistently
@@ -452,6 +510,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ## 🔮 Future Enhancements
 
 ### Potential Additions
+
 1. **More Animations**: Fade-in, slide-up effects
 2. **Custom Scrollbars**: Styled scrollbar design
 3. **Skeleton Loaders**: Loading state improvements
@@ -464,6 +523,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ### Quick Reference
 
 #### Spacing
+
 - `--spacing-xs`: 0.25rem (4px)
 - `--spacing-sm`: 0.5rem (8px)
 - `--spacing-md`: 1rem (16px)
@@ -471,18 +531,21 @@ All interactive elements maintain proper focus states and keyboard navigation.
 - `--spacing-xl`: 2rem (32px)
 
 #### Border Radius
+
 - `--radius-sm`: 0.375rem (6px)
 - `--radius-md`: 0.5rem (8px)
 - `--radius-lg`: 0.75rem (12px)
 - `--radius-xl`: 1rem (16px)
 
 #### Shadows
+
 - `--shadow-sm`: Subtle shadow
 - `--shadow-md`: Medium shadow
 - `--shadow-lg`: Large shadow
 - `--shadow-xl`: Extra large shadow
 
 #### Transitions
+
 - `--transition-fast`: 150ms
 - `--transition-base`: 200ms
 - `--transition-slow`: 300ms
@@ -490,6 +553,7 @@ All interactive elements maintain proper focus states and keyboard navigation.
 ## 🎉 Conclusion
 
 The custom CSS enhances Bootstrap with:
+
 - ✅ Modern, polished design
 - ✅ Consistent design system
 - ✅ Smooth animations

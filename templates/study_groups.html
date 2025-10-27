@@ -1,134 +1,145 @@
-{% extends "base.html" %}
-{% block title %}Study Groups - Study Organizer{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Study Groups - Study Organizer{%
+endblock %} {% block content %}
 <div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-people-fill"></i> Study Groups</h2>
-        <a href="{{ url_for('create_group') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create New Group
-        </a>
-    </div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people-fill"></i> Study Groups</h2>
+    <a href="{{ url_for('create_group') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Create New Group
+    </a>
+  </div>
 
-    <!-- My Groups -->
-    <div class="section-card mb-4">
-        <h4 class="section-title">
-            <i class="bi bi-person-check-fill"></i> My Groups
-        </h4>
-        {% if my_groups %}
-        <div class="row g-3">
-            {% for group in my_groups %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card group-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="group-icon me-3" data-color="{{ group.color }}">
-                                <i class="bi {{ group.icon }}"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h5 class="card-title mb-0">{{ group.name }}</h5>
-                                <small class="text-muted">
-                                    {% if group.created_by_id == current_user.id %}
-                                    <i class="bi bi-star-fill text-warning"></i> Created by you
-                                    {% else %}
-                                    By {{ group.creator.name or group.creator.email }}
-                                    {% endif %}
-                                </small>
-                            </div>
-                        </div>
-                        {% if group.description %}
-                        <p class="card-text text-muted small mb-3">{{ group.description[:100] }}...</p>
-                        {% endif %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-secondary">
-                                <i class="bi bi-people"></i> {{ group.member_count() }} members
-                            </span>
-                            <small class="text-muted">
-                                {{ group.created_at.strftime('%b %d, %Y') }}
-                            </small>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ url_for('group_view', group_id=group.id) }}" class="btn btn-sm btn-primary flex-fill">
-                                <i class="bi bi-box-arrow-in-right"></i> Open
-                            </a>
-                            {% if group.created_by_id != current_user.id %}
-                            <form method="POST" action="{{ url_for('leave_group', group_id=group.id) }}" 
-                                  class="d-inline"
-                                  onsubmit="return confirm('Leave this group?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+  <!-- My Groups -->
+  <div class="section-card mb-4">
+    <h4 class="section-title">
+      <i class="bi bi-person-check-fill"></i> My Groups
+    </h4>
+    {% if my_groups %}
+    <div class="row g-3">
+      {% for group in my_groups %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card group-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div class="group-icon me-3" data-color="{{ group.color }}">
+                <i class="bi {{ group.icon }}"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h5 class="card-title mb-0">{{ group.name }}</h5>
+                <small class="text-muted">
+                  {% if group.created_by_id == current_user.id %}
+                  <i class="bi bi-star-fill text-warning"></i> Created by you {%
+                  else %} By {{ group.creator.name or group.creator.email }} {%
+                  endif %}
+                </small>
+              </div>
             </div>
-            {% endfor %}
+            {% if group.description %}
+            <p class="card-text text-muted small mb-3">
+              {{ group.description[:100] }}...
+            </p>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary">
+                <i class="bi bi-people"></i> {{ group.member_count() }} members
+              </span>
+              <small class="text-muted">
+                {{ group.created_at.strftime('%b %d, %Y') }}
+              </small>
+            </div>
+            <div class="d-flex gap-2">
+              <a
+                href="{{ url_for('group_view', group_id=group.id) }}"
+                class="btn btn-sm btn-primary flex-fill"
+              >
+                <i class="bi bi-box-arrow-in-right"></i> Open
+              </a>
+              {% if group.created_by_id != current_user.id %}
+              <form
+                method="POST"
+                action="{{ url_for('leave_group', group_id=group.id) }}"
+                class="d-inline"
+                onsubmit="return confirm('Leave this group?');"
+              >
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-box-arrow-right"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
         </div>
-        {% else %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> You haven't joined any study groups yet. Create one to get started!
-        </div>
-        {% endif %}
+      </div>
+      {% endfor %}
     </div>
-
-    <!-- Groups I Created -->
-    {% if created_groups %}
-    <div class="section-card">
-        <h4 class="section-title">
-            <i class="bi bi-star-fill text-warning"></i> Groups I Created
-        </h4>
-        <div class="row g-3">
-            {% for group in created_groups %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card group-card border-warning h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="group-icon me-3" data-color="{{ group.color }}">
-                                <i class="bi {{ group.icon }}"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h5 class="card-title mb-0">{{ group.name }}</h5>
-                                <small class="text-warning">
-                                    <i class="bi bi-shield-fill-check"></i> Admin
-                                </small>
-                            </div>
-                        </div>
-                        {% if group.description %}
-                        <p class="card-text text-muted small mb-3">{{ group.description[:100] }}...</p>
-                        {% endif %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-secondary">
-                                <i class="bi bi-people"></i> {{ group.member_count() }} members
-                            </span>
-                            <small class="text-muted">
-                                {{ group.created_at.strftime('%b %d, %Y') }}
-                            </small>
-                        </div>
-                        <a href="{{ url_for('group_view', group_id=group.id) }}" class="btn btn-sm btn-warning w-100">
-                            <i class="bi bi-gear"></i> Manage Group
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+    {% else %}
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> You haven't joined any study groups yet.
+      Create one to get started!
     </div>
     {% endif %}
+  </div>
+
+  <!-- Groups I Created -->
+  {% if created_groups %}
+  <div class="section-card">
+    <h4 class="section-title">
+      <i class="bi bi-star-fill text-warning"></i> Groups I Created
+    </h4>
+    <div class="row g-3">
+      {% for group in created_groups %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card group-card border-warning h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div class="group-icon me-3" data-color="{{ group.color }}">
+                <i class="bi {{ group.icon }}"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h5 class="card-title mb-0">{{ group.name }}</h5>
+                <small class="text-warning">
+                  <i class="bi bi-shield-fill-check"></i> Admin
+                </small>
+              </div>
+            </div>
+            {% if group.description %}
+            <p class="card-text text-muted small mb-3">
+              {{ group.description[:100] }}...
+            </p>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary">
+                <i class="bi bi-people"></i> {{ group.member_count() }} members
+              </span>
+              <small class="text-muted">
+                {{ group.created_at.strftime('%b %d, %Y') }}
+              </small>
+            </div>
+            <a
+              href="{{ url_for('group_view', group_id=group.id) }}"
+              class="btn btn-sm btn-warning w-100"
+            >
+              <i class="bi bi-gear"></i> Manage Group
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <style>
-.group-card {
+  .group-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+  }
 
-.group-card:hover {
+  .group-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.group-icon {
+  .group-icon {
     width: 56px;
     height: 56px;
     border-radius: 12px;
@@ -138,24 +149,24 @@
     font-size: 1.5rem;
     background-color: var(--card-bg);
     border: 2px solid var(--border-color);
-}
+  }
 
-.group-icon i {
+  .group-icon i {
     color: var(--text-primary);
-}
+  }
 </style>
 
 <script>
-// Apply group colors dynamically
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.group-icon').forEach(function(icon) {
-        const color = icon.getAttribute('data-color');
-        if (color) {
-            icon.style.backgroundColor = color + '20';
-            icon.style.borderColor = color;
-            icon.querySelector('i').style.color = color;
-        }
+  // Apply group colors dynamically
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".group-icon").forEach(function (icon) {
+      const color = icon.getAttribute("data-color");
+      if (color) {
+        icon.style.backgroundColor = color + "20";
+        icon.style.borderColor = color;
+        icon.querySelector("i").style.color = color;
+      }
     });
-});
+  });
 </script>
 {% endblock %}

@@ -188,25 +188,25 @@
 </div>
 
 <style>
-.collection-icon-large {
+  .collection-icon-large {
     width: 80px;
     height: 80px;
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-}
+  }
 
-.document-card {
+  .document-card {
     transition: transform 0.2s, box-shadow 0.2s;
-}
+  }
 
-.document-card:hover {
+  .document-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
+  }
 
-.document-thumbnail {
+  .document-thumbnail {
     height: 200px;
     overflow: hidden;
     border-radius: 8px;
@@ -214,141 +214,143 @@
     display: flex;
     align-items: center;
     justify-content: center;
-}
+  }
 
-.document-thumbnail img {
+  .document-thumbnail img {
     max-height: 100%;
     width: auto;
     object-fit: cover;
-}
+  }
 
-.thumbnail-placeholder {
+  .thumbnail-placeholder {
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
+  }
 
-.document-selection-list {
+  .document-selection-list {
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     padding: 1rem;
-}
+  }
 
-.document-selection-item {
+  .document-selection-item {
     padding: 0.75rem;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     margin-bottom: 0.5rem;
     cursor: pointer;
     transition: background-color 0.2s;
-}
+  }
 
-.document-selection-item:hover {
+  .document-selection-item:hover {
     background-color: #f8f9fa;
-}
+  }
 
-.document-selection-item input[type="checkbox"] {
+  .document-selection-item input[type="checkbox"] {
     cursor: pointer;
-}
+  }
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
     /* Header adjustments */
     .d-flex.justify-content-between {
-        flex-direction: column;
-        gap: 1rem;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     .d-flex.align-items-center {
-        flex-direction: column;
-        align-items: flex-start !important;
+      flex-direction: column;
+      align-items: flex-start !important;
     }
 
     .collection-icon-large {
-        width: 60px;
-        height: 60px;
-        margin-bottom: 1rem;
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1rem;
     }
 
     .collection-icon-large i {
-        font-size: 2rem !important;
+      font-size: 2rem !important;
     }
 
     h2 {
-        font-size: 1.5rem;
+      font-size: 1.5rem;
     }
 
     /* Button group */
     .d-flex.justify-content-between > div {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        gap: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 0.5rem;
     }
 
     .d-flex.justify-content-between > div .btn {
-        width: 100%;
+      width: 100%;
     }
 
     /* Document cards */
-    .col-md-6, .col-lg-4 {
-        padding: 0.5rem;
+    .col-md-6,
+    .col-lg-4 {
+      padding: 0.5rem;
     }
 
     .document-thumbnail {
-        height: 150px;
+      height: 150px;
     }
 
     .btn-group {
-        flex-direction: row;
-        flex-wrap: wrap;
+      flex-direction: row;
+      flex-wrap: wrap;
     }
 
     .btn-group .btn,
     .btn-group form {
-        flex: 1;
-        min-width: 60px;
+      flex: 1;
+      min-width: 60px;
     }
 
     /* Modal improvements */
     .modal-dialog {
-        margin: 0.5rem;
+      margin: 0.5rem;
     }
 
     .document-selection-list {
-        max-height: 300px;
+      max-height: 300px;
     }
-}
+  }
 
-@media (max-width: 576px) {
+  @media (max-width: 576px) {
     .collection-icon-large {
-        width: 50px;
-        height: 50px;
+      width: 50px;
+      height: 50px;
     }
 
     .collection-icon-large i {
-        font-size: 1.5rem !important;
+      font-size: 1.5rem !important;
     }
 
     .document-thumbnail {
-        height: 120px;
+      height: 120px;
     }
 
     .card-body {
-        padding: 0.75rem;
+      padding: 0.75rem;
     }
 
     .badge {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
     }
-}
-</style><script>
+  }
+</style>
+<script>
   // Load available documents when modal opens
   document.getElementById('addDocumentsModal').addEventListener('show.bs.modal', function() {
       loadAvailableDocuments();

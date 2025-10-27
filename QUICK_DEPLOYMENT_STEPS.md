@@ -113,6 +113,7 @@ PYTHON_VERSION
 **Optional - Cloud Storage (Recommended):**
 
 If using **Azure Blob Storage** (FREE for students):
+
 ```bash
 STORAGE_TYPE
 azure
@@ -128,6 +129,7 @@ study-documents
 ```
 
 OR if using **AWS S3**:
+
 ```bash
 STORAGE_TYPE
 s3
@@ -146,6 +148,7 @@ your-bucket-name
 ```
 
 OR use **local storage** (NOT recommended - files deleted on redeploy):
+
 ```bash
 STORAGE_TYPE
 local
@@ -194,6 +197,7 @@ Your app is now live, but you need to tell Google about the new URL:
    - ✅ Test on your phone! 📱
 
 ### First Visit Might Be Slow
+
 - Free tier "sleeps" after 15 minutes of inactivity
 - First request after sleep takes 30-60 seconds
 - After that, it's fast!
@@ -214,18 +218,22 @@ Everything should work beautifully! 🎨
 ## 🔧 Troubleshooting
 
 ### "Application Error" on first visit
+
 - Wait 1-2 minutes for app to wake up
 - Check **Logs** in Render dashboard
 
 ### "Redirect URI mismatch" error
+
 - Make sure you added the correct callback URL to Google Console
 - Format: `https://your-app-name.onrender.com/callback`
 
 ### Database connection error
+
 - Check that `DATABASE_URL` is set correctly in environment variables
 - Make sure it starts with `postgresql://` (Render auto-converts from `postgres://`)
 
 ### Files not uploading
+
 - If using local storage, files are deleted on redeploy (use Azure/S3!)
 - Check storage credentials in environment variables
 
