@@ -19,21 +19,63 @@
       rel="stylesheet"
     />
     <style>
+      :root {
+        /* Light mode colors */
+        --bg-gradient-start: #667eea;
+        --bg-gradient-end: #764ba2;
+        --navbar-bg: rgba(255, 255, 255, 0.95);
+        --navbar-text: #4a5568;
+        --navbar-hover: #667eea;
+        --container-bg: rgba(255, 255, 255, 0.95);
+        --text-primary: #2d3748;
+        --text-secondary: #718096;
+        --text-muted: #a0aec0;
+        --card-bg: #ffffff;
+        --card-shadow: rgba(0, 0, 0, 0.1);
+        --border-color: #e2e8f0;
+        --input-bg: #ffffff;
+        --input-border: #cbd5e0;
+        --badge-bg: #f7fafc;
+        --badge-text: #2d3748;
+      }
+
+      [data-theme="dark"] {
+        /* Dark mode colors */
+        --bg-gradient-start: #1a202c;
+        --bg-gradient-end: #2d3748;
+        --navbar-bg: rgba(26, 32, 44, 0.95);
+        --navbar-text: #e2e8f0;
+        --navbar-hover: #667eea;
+        --container-bg: rgba(45, 55, 72, 0.95);
+        --text-primary: #f7fafc;
+        --text-secondary: #cbd5e0;
+        --text-muted: #a0aec0;
+        --card-bg: #2d3748;
+        --card-shadow: rgba(0, 0, 0, 0.3);
+        --border-color: #4a5568;
+        --input-bg: #2d3748;
+        --input-border: #4a5568;
+        --badge-bg: #4a5568;
+        --badge-text: #e2e8f0;
+      }
+
       * {
         font-family: "Poppins", sans-serif;
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
       }
 
       body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
         background-attachment: fixed;
         min-height: 100vh;
+        color: var(--text-primary);
       }
 
       .navbar {
-        background: rgba(255, 255, 255, 0.95) !important;
+        background: var(--navbar-bg) !important;
         backdrop-filter: blur(10px);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 30px var(--card-shadow);
+        border-bottom: 1px solid var(--border-color);
       }
 
       .navbar-brand {
@@ -46,14 +88,14 @@
       }
 
       .nav-link {
-        color: #4a5568 !important;
+        color: var(--navbar-text) !important;
         font-weight: 500;
         transition: all 0.3s ease;
         position: relative;
       }
 
       .nav-link:hover {
-        color: #667eea !important;
+        color: var(--navbar-hover) !important;
         transform: translateY(-2px);
       }
 
@@ -74,10 +116,10 @@
       }
 
       .container {
-        background: rgba(255, 255, 255, 0.95);
+        background: var(--container-bg);
         border-radius: 20px;
         padding: 2rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 60px var(--card-shadow);
         backdrop-filter: blur(10px);
         margin-top: 2rem;
         margin-bottom: 2rem;
@@ -86,10 +128,11 @@
       .year-card {
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         border: none;
-        background: white;
+        background: var(--card-bg);
         border-radius: 15px;
         overflow: hidden;
         position: relative;
+        box-shadow: 0 4px 20px var(--card-shadow);
       }
 
       .year-card::before {
@@ -355,6 +398,186 @@
           min-height: 44px;
         }
       }
+
+      /* Dark mode specific styles */
+      [data-theme="dark"] .card {
+        background: var(--card-bg);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+      }
+
+      [data-theme="dark"] .list-group-item {
+        background: var(--card-bg);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+      }
+
+      [data-theme="dark"] .form-control,
+      [data-theme="dark"] .form-select {
+        background: var(--input-bg);
+        border-color: var(--input-border);
+        color: var(--text-primary);
+      }
+
+      [data-theme="dark"] .form-control:focus,
+      [data-theme="dark"] .form-select:focus {
+        background: var(--input-bg);
+        border-color: #667eea;
+        color: var(--text-primary);
+      }
+
+      [data-theme="dark"] .badge {
+        background: var(--badge-bg) !important;
+        color: var(--badge-text) !important;
+      }
+
+      [data-theme="dark"] .text-muted {
+        color: var(--text-muted) !important;
+      }
+
+      [data-theme="dark"] .text-dark {
+        color: var(--text-primary) !important;
+      }
+
+      [data-theme="dark"] .alert {
+        background: var(--card-bg);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+      }
+
+      [data-theme="dark"] .modal-content {
+        background: var(--container-bg);
+        color: var(--text-primary);
+      }
+
+      [data-theme="dark"] .modal-header,
+      [data-theme="dark"] .modal-footer {
+        border-color: var(--border-color);
+      }
+
+      /* Dark mode toggle button */
+      .theme-toggle {
+        background: none;
+        border: 2px solid var(--border-color);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--navbar-text);
+      }
+
+      .theme-toggle:hover {
+        background: var(--badge-bg);
+        transform: rotate(180deg);
+      }
+
+      .theme-toggle i {
+        font-size: 1.2rem;
+      }
+
+      /* Better Document Cards */
+      .document-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        background: var(--card-bg);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px var(--card-shadow);
+        position: relative;
+      }
+
+      .document-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+      }
+
+      .document-card .document-thumbnail {
+        height: 220px;
+        overflow: hidden;
+        position: relative;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      }
+
+      [data-theme="dark"] .document-card .document-thumbnail {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      }
+
+      .document-card .document-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .document-card:hover .document-thumbnail img {
+        transform: scale(1.1);
+      }
+
+      .document-card .thumbnail-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        display: flex;
+        align-items: flex-end;
+        padding: 1rem;
+        color: white;
+      }
+
+      .document-card:hover .thumbnail-overlay {
+        opacity: 1;
+      }
+
+      /* Subject Color Coding */
+      .subject-badge-math { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%) !important; color: white !important; }
+      .subject-badge-science { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important; color: white !important; }
+      .subject-badge-english { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%) !important; color: white !important; }
+      .subject-badge-history { background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%) !important; color: white !important; }
+      .subject-badge-physics { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; color: white !important; }
+      .subject-badge-chemistry { background: linear-gradient(135deg, #38b2ac 0%, #319795 100%) !important; color: white !important; }
+      .subject-badge-biology { background: linear-gradient(135deg, #68d391 0%, #48bb78 100%) !important; color: white !important; }
+      .subject-badge-geography { background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%) !important; color: white !important; }
+      .subject-badge-computer { background: linear-gradient(135deg, #fc8181 0%, #f56565 100%) !important; color: white !important; }
+      .subject-badge-default { background: linear-gradient(135deg, #a0aec0 0%, #718096 100%) !important; color: white !important; }
+
+      .document-card-border-math { border-left: 4px solid #4299e1; }
+      .document-card-border-science { border-left: 4px solid #48bb78; }
+      .document-card-border-english { border-left: 4px solid #ed8936; }
+      .document-card-border-history { border-left: 4px solid #9f7aea; }
+      .document-card-border-physics { border-left: 4px solid #667eea; }
+      .document-card-border-chemistry { border-left: 4px solid #38b2ac; }
+      .document-card-border-biology { border-left: 4px solid #68d391; }
+      .document-card-border-geography { border-left: 4px solid #f6ad55; }
+      .document-card-border-computer { border-left: 4px solid #fc8181; }
+      .document-card-border-default { border-left: 4px solid #a0aec0; }
+
+      /* Quick Actions on Hover */
+      .document-card .quick-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+      }
+
+      .document-card:hover .quick-actions {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .document-card .quick-actions .btn {
+        margin-left: 0.25rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      }
     </style>
   </head>
   <body>
@@ -431,6 +654,16 @@
             </button>
           </form>
           <div class="d-flex align-items-center flex-column flex-lg-row">
+            <!-- Dark Mode Toggle -->
+            <button
+              id="theme-toggle"
+              class="theme-toggle me-2 mb-2 mb-lg-0"
+              title="Toggle Dark Mode"
+              aria-label="Toggle Dark Mode"
+            >
+              <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
+            </button>
+
             <div class="d-flex align-items-center mb-2 mb-lg-0 me-lg-3">
               <img
                 src="{{ current_user.profile_pic or 'https://via.placeholder.com/32' }}"
@@ -479,6 +712,42 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Dark Mode Toggle Script -->
+    <script>
+      // Load theme from localStorage
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      
+      // Update icon based on theme
+      function updateThemeIcon(theme) {
+        const icon = document.getElementById('theme-icon');
+        if (icon) {
+          if (theme === 'dark') {
+            icon.className = 'bi bi-sun-fill';
+          } else {
+            icon.className = 'bi bi-moon-stars-fill';
+          }
+        }
+      }
+      
+      // Initialize icon
+      updateThemeIcon(currentTheme);
+      
+      // Toggle theme
+      const themeToggle = document.getElementById('theme-toggle');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          
+          document.documentElement.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+          updateThemeIcon(newTheme);
+        });
+      }
+    </script>
+    
     {% block scripts %}{% endblock %}
   </body>
 </html>

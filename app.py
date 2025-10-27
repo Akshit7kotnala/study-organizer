@@ -284,6 +284,32 @@ def human_year_label(y: int) -> str:
     return mapping.get(y, f'{y} Year')
 
 
+def get_subject_color_class(subject: str) -> str:
+    """Get the color class for a subject."""
+    subject_lower = subject.lower()
+    
+    color_mapping = {
+        'math': 'math',
+        'mathematics': 'math',
+        'science': 'science',
+        'english': 'english',
+        'history': 'history',
+        'physics': 'physics',
+        'chemistry': 'chemistry',
+        'biology': 'biology',
+        'geography': 'geography',
+        'computer': 'computer',
+        'cs': 'computer',
+        'programming': 'computer',
+    }
+    
+    for key, value in color_mapping.items():
+        if key in subject_lower:
+            return value
+    
+    return 'default'
+
+
 def generate_thumbnail(file_path: str, mimetype: str) -> str:
     """
     Generate a thumbnail for an uploaded file (image or PDF).
@@ -991,7 +1017,8 @@ def year_view(year: int):
         documents=documents, 
         pagination=pagination,
         subjects=subjects, 
-        human_year_label=human_year_label
+        human_year_label=human_year_label,
+        get_subject_color_class=get_subject_color_class
     )
 
 
@@ -1046,7 +1073,8 @@ def search():
         query=query,
         documents=documents,
         pagination=pagination,
-        human_year_label=human_year_label
+        human_year_label=human_year_label,
+        get_subject_color_class=get_subject_color_class
     )
 
 
@@ -1090,7 +1118,8 @@ def tag_view(slug):
         tag=tag,
         documents=documents,
         pagination=pagination,
-        human_year_label=human_year_label
+        human_year_label=human_year_label,
+        get_subject_color_class=get_subject_color_class
     )
 
 

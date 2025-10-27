@@ -151,67 +151,99 @@
     </div>
   </div>
 
-  <!-- Documents List -->
+  <!-- Documents Grid -->
   {% if documents %}
-    <div class="list-group mb-4">
+    <div class="row g-4 mb-4">
       {% for d in documents %}
-        <div class="list-group-item doc-item">
-          <div class="row align-items-center">
-            <div class="col-auto">
-              {% if d.thumbnail_filename %}
-                <img src="{{ url_for('thumbnail_file', filename=d.thumbnail_filename) }}" 
-                     alt="Thumbnail" 
-                     class="img-thumbnail" 
-                     style="width: 80px; height: 80px; object-fit: cover;">
-              {% else %}
-                <i class="{{ d.file_icon() }}" style="font-size: 2.5rem;"></i>
+      <div class="col-md-6 col-lg-4">
+        <div class="card document-card document-card-border-{{ get_subject_color_class(d.subject) }}">
+          <!-- Thumbnail with hover overlay -->
+          <div class="document-thumbnail">
+            {% if d.thumbnail_filename %}
+              <img src="{{ url_for('thumbnail_file', filename=d.thumbnail_filename) }}" 
+                   alt="{{ d.original_filename }}">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center h-100">
+                <i class="{{ d.file_icon() }}" style="font-size: 4rem; color: var(--text-muted);"></i>
+              </div>
+            {% endif %}
+            
+            <!-- Overlay on hover -->
+            <div class="thumbnail-overlay">
+              <div class="w-100">
+                <div class="text-white fw-bold mb-1">{{ d.original_filename[:30] }}{% if d.original_filename|length > 30 %}...{% endif %}</div>
+                <small><i class="bi bi-hdd me-1"></i>{{ d.format_size() }}</small>
+              </div>
+            </div>
+
+            <!-- Quick actions on hover -->
+            <div class="quick-actions">
+              <a href="{{ url_for('preview', doc_id=d.id) }}" target="_blank" 
+                 class="btn btn-sm btn-light" title="Preview">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{{ url_for('download', doc_id=d.id) }}" 
+                 class="btn btn-sm btn-primary" title="Download">
+                <i class="bi bi-download"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Card body -->
+          <div class="card-body">
+            <h6 class="card-title mb-2 text-truncate" title="{{ d.original_filename }}">
+              {{ d.original_filename }}
+            </h6>
+            
+            <!-- Subject badge with color -->
+            <div class="mb-2">
+              <span class="badge subject-badge-{{ get_subject_color_class(d.subject) }}">
+                <i class="bi bi-book me-1"></i>{{ d.subject }}
+              </span>
+            </div>
+
+            <!-- Tags -->
+            {% if d.get_tags() %}
+            <div class="mb-2">
+              {% for tag in d.get_tags()[:3] %}
+                <a href="{{ url_for('tag_view', slug=tag.slug) }}" class="text-decoration-none">
+                  <span class="badge bg-secondary me-1">
+                    <i class="bi bi-tag me-1"></i>{{ tag.name }}
+                  </span>
+                </a>
+              {% endfor %}
+              {% if d.get_tags()|length > 3 %}
+                <span class="badge bg-secondary">+{{ d.get_tags()|length - 3 }}</span>
               {% endif %}
             </div>
-            <div class="col">
-              <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">
-                  {{ d.original_filename }}
-                </h5>
-                <small class="text-muted">
-                  <i class="bi bi-calendar-event me-1"></i>{{ d.upload_date.strftime('%Y-%m-%d %H:%M') }}
-                </small>
-              </div>
-              <p class="mb-1">
-                <span class="badge bg-primary me-2">
-                  <i class="bi bi-book me-1"></i>{{ d.subject }}
-                </span>
-                {% if d.get_tags() %}
-                  {% for tag in d.get_tags() %}
-                    <a href="{{ url_for('tag_view', slug=tag.slug) }}" class="text-decoration-none">
-                      <span class="badge bg-secondary me-1">
-                        <i class="bi bi-tag me-1"></i>{{ tag.name }}
-                      </span>
-                    </a>
-                  {% endfor %}
-                {% endif %}
-              </p>
-              <small class="text-muted">
-                <i class="bi bi-hdd me-1"></i>Size: {{ d.format_size() }}
-              </small>
-            </div>
-            <div class="col-auto">
+            {% endif %}
+
+            <!-- Upload date -->
+            <small class="text-muted d-block mb-3">
+              <i class="bi bi-calendar-event me-1"></i>{{ d.upload_date.strftime('%b %d, %Y') }}
+            </small>
+
+            <!-- Action buttons -->
+            <div class="d-grid gap-2">
               <div class="btn-group" role="group">
-                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download', doc_id=d.id) }}" title="Download">
-                  <i class="bi bi-download"></i>
+                <a href="{{ url_for('preview', doc_id=d.id) }}" target="_blank" 
+                   class="btn btn-sm btn-outline-primary" title="Preview">
+                  <i class="bi bi-eye"></i> Preview
                 </a>
-                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('preview', doc_id=d.id) }}" target="_blank" title="Preview">
-                  <i class="bi bi-eye"></i>
+                <a href="{{ url_for('edit_document', doc_id=d.id) }}" 
+                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i> Edit
                 </a>
-                <a class="btn btn-sm btn-outline-info" href="{{ url_for('edit_document', doc_id=d.id) }}" title="Edit">
-                  <i class="bi bi-pencil"></i>
-                </a>
-                <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ d.id }}, '{{ d.original_filename }}')" title="Delete">
+                <button class="btn btn-sm btn-outline-danger" 
+                        onclick="confirmDelete({{ d.id }}, '{{ d.original_filename }}')" 
+                        title="Delete">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
             </div>
           </div>
         </div>
+      </div>
       {% endfor %}
     </div>
 
