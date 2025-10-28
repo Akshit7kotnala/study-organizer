@@ -20,6 +20,7 @@
 Study Organizer is a comprehensive learning platform built with Flask that leverages artificial intelligence to help students manage their academic documents efficiently. It combines traditional document organization with modern AI capabilities including automatic summarization, smart tagging, OCR text extraction, intelligent search, and personalized study recommendations.
 
 **Perfect for:**
+
 - 🎓 Students managing coursework
 - 📖 Research paper organization
 - 👥 Collaborative study groups
@@ -31,6 +32,7 @@ Study Organizer is a comprehensive learning platform built with Flask that lever
 ## ✨ Key Features
 
 ### 📁 Core Document Management
+
 - **Multi-format Support**: PDFs, images, Word docs, PowerPoint, and more
 - **Smart Organization**: By academic year, subject, and custom tags
 - **Preview System**: In-browser preview for PDFs, images, and text files
@@ -39,6 +41,7 @@ Study Organizer is a comprehensive learning platform built with Flask that lever
 - **Collections**: Group related documents together
 
 ### 🤖 AI-Powered Features
+
 - **Document Summarization** 📄 - GPT-3.5 generates concise summaries
 - **Smart Tagging** 🏷️ - Automatic keyword extraction with NLP
 - **OCR Text Extraction** 👁️ - Extract text from images and scanned PDFs
@@ -46,12 +49,14 @@ Study Organizer is a comprehensive learning platform built with Flask that lever
 - **Study Recommendations** 💡 - ML-based similar document suggestions
 
 ### 👥 Collaboration
+
 - **Document Sharing** - Share with viewer/editor/admin permissions
 - **Comments System** - Add comments and annotations
 - **Study Groups** - Create collaborative learning spaces
 - **Real-time Notifications** - Stay updated on shares and comments
 
 ### 🎨 Modern UI
+
 - **Dark Mode** - Eye-friendly dark theme toggle
 - **Gradient Design** - Beautiful custom CSS with 5 color schemes
 - **Responsive** - Works on desktop, tablet, and mobile
@@ -78,12 +83,14 @@ Study Organizer is a comprehensive learning platform built with Flask that lever
 ## 📦 Quick Start
 
 ### 1. Clone Repository
+
 ```bash
 git clone https://github.com/Akshit7kotnala/study-organizer.git
 cd study-organizer
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Windows: .\venv\Scripts\Activate.ps1
@@ -91,17 +98,21 @@ pip install -r requirements.txt
 ```
 
 ### 3. Install Tesseract OCR (Optional)
+
 **Windows:** Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki)  
 **Mac:** `brew install tesseract`  
 **Linux:** `sudo apt-get install tesseract-ocr`
 
 ### 4. Download NLTK Data
+
 ```bash
 python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords'); nltk.download('wordnet'); nltk.download('punkt_tab')"
 ```
 
 ### 5. Configure Environment
+
 Create `.env` file:
+
 ```env
 SECRET_KEY=your-secret-key
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
@@ -111,11 +122,13 @@ TESSERACT_CMD=C:\\Program Files\\Tesseract-OCR\\tesseract.exe
 ```
 
 ### 6. Initialize Database
+
 ```bash
 python -c "from app import app, db; app.app_context().push(); db.create_all()"
 ```
 
 ### 7. Run Application
+
 ```bash
 python app.py
 ```
@@ -127,40 +140,47 @@ Visit: **http://127.0.0.1:5000/**
 ## 🤖 AI Features Deep Dive
 
 ### Document Summarization
+
 - **Technology:** OpenAI GPT-3.5 Turbo
 - **Process:** Extracts text → Sends to GPT-3.5 → Generates 500-char summary
 - **Cost:** $0.01-$0.05 per document
 - **Speed:** 2-3 seconds
 
 **Example:**
+
 ```
 Document: 50-page calculus chapter
-Summary: "Covers derivatives including power rule, product rule, 
+Summary: "Covers derivatives including power rule, product rule,
 chain rule. Discusses applications in physics and optimization."
 ```
 
 ### Smart Tagging
+
 - **Technology:** NLTK + OpenAI
 - **Process:** NLP tokenization → Stopword removal → AI context analysis
 - **Output:** 5 relevant keywords
 - **Accuracy:** 80-90%
 
 **Example Tags:**
+
 - Math: "calculus", "derivatives", "limits", "continuity", "functions"
 - History: "world war", "treaty", "imperialism", "nationalism"
 
 ### OCR Text Extraction
+
 - **Technology:** Tesseract OCR + PyPDF2
 - **Supports:** Scanned PDFs, photos, screenshots, handwritten notes
 - **Accuracy:** 85-99% (depends on scan quality)
 - **Languages:** 100+ languages supported
 
 ### Intelligent Search
+
 - **Searches:** Filenames, subjects, tags, summaries, extracted text
 - **Features:** Case-insensitive, partial matching, real-time results
 - **Speed:** <1 second
 
 ### Study Recommendations
+
 - **Technology:** scikit-learn (TF-IDF + Cosine Similarity)
 - **Process:** Text vectorization → Similarity calculation → Top 5 results
 - **Use Case:** Find related documents automatically
@@ -196,12 +216,14 @@ study-organizer/
 ## 🗄️ Database Schema
 
 ### Core Models
+
 - **User** - Google OAuth authentication
 - **Document** - Files with AI fields (summary, extracted_text, ai_tags)
 - **Tag** - User-created and AI-generated tags
 - **Collection** - Document groupings
 
 ### Collaboration Models
+
 - **SharePermission** - Document/collection sharing
 - **Comment** - Document comments and replies
 - **StudyGroup** - Collaborative study groups
@@ -212,6 +234,7 @@ study-organizer/
 ## 🔌 API Endpoints
 
 ### Authentication
+
 ```http
 GET  /login                     # Login page
 GET  /login/google              # Google OAuth
@@ -219,6 +242,7 @@ GET  /logout                    # Logout
 ```
 
 ### Documents
+
 ```http
 POST /upload                    # Upload document
 GET  /document/<id>            # View document
@@ -226,6 +250,7 @@ GET  /download/<id>            # Download file
 ```
 
 ### AI Features
+
 ```http
 POST /document/<id>/analyze           # Trigger AI analysis
 GET  /document/<id>/summary           # Get summary
@@ -235,6 +260,7 @@ GET  /search?q=query                  # Search documents
 ```
 
 ### Collaboration
+
 ```http
 POST /document/<id>/share      # Share document
 POST /document/<id>/comments   # Add comment
@@ -247,6 +273,7 @@ GET  /study-groups             # List groups
 ## 🚀 Usage Examples
 
 ### Upload & Analyze Document
+
 1. Click "Upload" in navbar
 2. Select PDF file
 3. Fill in year, subject, tags
@@ -255,6 +282,7 @@ GET  /study-groups             # List groups
 6. View summary, tags, and recommendations
 
 ### Create Study Group
+
 1. Go to "Study Groups"
 2. Click "Create Group"
 3. Enter name and description
@@ -262,6 +290,7 @@ GET  /study-groups             # List groups
 5. Share documents within group
 
 ### Search Documents
+
 1. Use search bar in navbar
 2. Type keyword (e.g., "calculus")
 3. View results with summaries
@@ -272,12 +301,15 @@ GET  /study-groups             # List groups
 ## 🎨 Screenshots
 
 ### Dashboard
+
 ![Dashboard](https://via.placeholder.com/800x400?text=Dashboard+Screenshot)
 
 ### AI Features
+
 ![AI Features](https://via.placeholder.com/800x400?text=AI+Features+Screenshot)
 
 ### Document View
+
 ![Document View](https://via.placeholder.com/800x400?text=Document+View+Screenshot)
 
 ---
@@ -304,6 +336,7 @@ GET  /study-groups             # List groups
 - ✅ API endpoint protection
 
 **For Production:**
+
 - Use PostgreSQL database
 - Enable HTTPS
 - Set `FLASK_ENV=production`
@@ -315,6 +348,7 @@ GET  /study-groups             # List groups
 ## 🐛 Troubleshooting
 
 ### Database Error: "no such column"
+
 ```bash
 # Delete and recreate database
 rm documents.db
@@ -322,16 +356,19 @@ python -c "from app import app, db; app.app_context().push(); db.create_all()"
 ```
 
 ### OpenAI API Error
+
 - Check API key in `.env`
 - Verify you have credits: https://platform.openai.com/account/usage
 - Test with: `python -c "import openai; print('OK')"`
 
 ### Tesseract Not Found
+
 - Install Tesseract OCR
 - Update `TESSERACT_CMD` path in `.env`
 - Test with: `tesseract --version`
 
 ### Google OAuth Error
+
 - Check redirect URI matches exactly: `http://127.0.0.1:5000/login/google/callback`
 - Verify OAuth consent screen is configured
 - Check client ID and secret in `.env`
@@ -347,8 +384,8 @@ python -c "from app import app, db; app.app_context().push(); db.create_all()"
 
 ---
 
-
 **Why this is impressive:**
+
 - ✅ Cutting-edge AI/ML integration (OpenAI GPT-3.5)
 - ✅ Real-world problem solving
 - ✅ Full-stack implementation
@@ -358,6 +395,7 @@ python -c "from app import app, db; app.app_context().push(); db.create_all()"
 - ✅ Scalable architecture
 
 **Technologies demonstrated:**
+
 - Artificial Intelligence & Machine Learning
 - Natural Language Processing
 - Computer Vision (OCR)
@@ -389,6 +427,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 ## 👨‍💻 Author
 
 **Akshit Kotnala**
+
 - GitHub: [@Akshit7kotnala](https://github.com/Akshit7kotnala)
 - Project: [study-organizer](https://github.com/Akshit7kotnala/study-organizer)
 
@@ -407,6 +446,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 ## 📞 Support
 
 **Having issues?** Check:
+
 1. [Troubleshooting](#-troubleshooting) section
 2. [Documentation](Documentation/) folder
 3. [GitHub Issues](https://github.com/Akshit7kotnala/study-organizer/issues)

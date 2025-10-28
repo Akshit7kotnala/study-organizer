@@ -13,12 +13,14 @@ The Study Organizer now includes advanced AI-powered features to enhance your le
 **Description**: Automatically generate concise summaries of your documents using advanced AI.
 
 **How it works**:
+
 - Extracts text from PDFs, Word documents, and images
 - Sends the text to OpenAI's GPT-3.5 model
 - Generates a 500-character summary highlighting key points
 - Stores the summary for quick access
 
 **Usage**:
+
 ```python
 # Via API
 POST /document/<doc_id>/analyze
@@ -28,6 +30,7 @@ GET /document/<doc_id>/summary
 ```
 
 **Benefits**:
+
 - Quick overview without reading entire document
 - Save time on document review
 - Identify relevant documents faster
@@ -41,12 +44,14 @@ GET /document/<doc_id>/summary
 **Description**: Automatically extract relevant keywords and tags from document content.
 
 **How it works**:
+
 1. **NLP Analysis**: Uses NLTK to tokenize text and extract frequent meaningful words
 2. **AI Enhancement**: OpenAI analyzes content and suggests context-aware tags
 3. **Subject Context**: Takes into account the document's subject for better accuracy
 4. **Deduplication**: Removes duplicate tags and limits to top 5
 
 **Usage**:
+
 ```python
 # Get AI tags
 GET /document/<doc_id>/smart-tags
@@ -56,6 +61,7 @@ POST /document/<doc_id>/analyze
 ```
 
 **Example Tags**:
+
 - For a Math document: "calculus", "derivatives", "integration", "limits", "functions"
 - For a History document: "world war", "treaty", "imperialism", "nationalism", "alliance"
 
@@ -68,17 +74,20 @@ POST /document/<doc_id>/analyze
 **Description**: Extract text from images, scanned PDFs, and Word documents.
 
 **Supported Formats**:
+
 - PDF documents (native and scanned)
 - Images (JPG, PNG, etc.)
 - Word documents (DOCX)
 
 **How it works**:
+
 - **PDFs**: Uses PyPDF2 to extract native text
 - **Images**: Uses Tesseract OCR for optical character recognition
 - **Word Docs**: Uses python-docx to extract text
 - Stores extracted text in database for search
 
 **Configuration**:
+
 ```env
 # Tesseract path (Windows)
 TESSERACT_CMD=C:\\Program Files\\Tesseract-OCR\\tesseract.exe
@@ -88,6 +97,7 @@ OCR_LANGUAGE=eng
 ```
 
 **Installation**:
+
 1. Download Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki
 2. Install to `C:\Program Files\Tesseract-OCR\`
 3. Update `.env` with correct path if different
@@ -99,12 +109,14 @@ OCR_LANGUAGE=eng
 **Technology**: SQLAlchemy Full-Text Search
 
 **Description**: Search across all document content including:
+
 - Document titles
 - Subjects and tags
 - AI-generated summaries
 - Extracted text content
 
 **Usage**:
+
 ```python
 # Via web interface
 GET /search?q=query
@@ -114,6 +126,7 @@ GET /api/search?q=query
 ```
 
 **Search Fields**:
+
 - `original_filename`: Document names
 - `subject`: Subject/course names
 - `tags`: Manual tags
@@ -122,6 +135,7 @@ GET /api/search?q=query
 - `extracted_text`: Full document text
 
 **Features**:
+
 - Case-insensitive search
 - Partial matching
 - Results limited to user's documents
@@ -136,18 +150,21 @@ GET /api/search?q=query
 **Description**: Get personalized document recommendations based on content similarity.
 
 **How it works**:
+
 1. **TF-IDF Vectorization**: Converts document text to numerical vectors
 2. **Similarity Calculation**: Computes cosine similarity between documents
 3. **Ranking**: Returns top 5 most similar documents
 4. **Filtering**: Only shows documents with >10% similarity
 
 **Usage**:
+
 ```python
 # Get recommendations for a document
 GET /document/<doc_id>/recommendations
 ```
 
 **Use Cases**:
+
 - Find related study materials
 - Discover documents on similar topics
 - Group related content together
@@ -155,6 +172,7 @@ GET /document/<doc_id>/recommendations
 
 **Example**:
 If you're viewing a "Calculus 101" document, you might get recommendations for:
+
 - "Advanced Calculus Notes"
 - "Derivative Examples"
 - "Integration Practice"
@@ -191,7 +209,7 @@ New fields added to `Document` model:
 ```python
 class Document(db.Model):
     # ... existing fields ...
-    
+
     # AI-powered features
     summary = db.Column(db.Text, nullable=True)
     extracted_text = db.Column(db.Text, nullable=True)
@@ -230,11 +248,13 @@ nltk.download('punkt_tab')
 ### Document Analysis
 
 **Trigger AI Analysis**
+
 ```http
 POST /document/<doc_id>/analyze
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -251,6 +271,7 @@ GET /document/<doc_id>/summary
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -265,6 +286,7 @@ GET /document/<doc_id>/smart-tags
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -279,6 +301,7 @@ GET /document/<doc_id>/extracted-text
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -294,6 +317,7 @@ GET /api/search?q=query
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -318,6 +342,7 @@ GET /document/<doc_id>/recommendations
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -343,6 +368,7 @@ Response:
 Access via: **Collaborate → AI Features 🤖**
 
 Features:
+
 - Statistics dashboard
 - Feature overview
 - How it works timeline
@@ -353,6 +379,7 @@ Features:
 Access via: **Search bar** or **/search**
 
 Features:
+
 - Full-text search across all documents
 - Result highlighting
 - Document cards with summaries
@@ -361,6 +388,7 @@ Features:
 ### Document View Enhancements
 
 On document detail pages:
+
 - View AI-generated summary
 - See smart tags
 - Get recommendations
@@ -373,10 +401,12 @@ On document detail pages:
 ### API Costs
 
 **OpenAI API Pricing** (as of 2024):
+
 - GPT-3.5 Turbo: ~$0.002 per 1K tokens
 - Average document analysis: $0.01 - $0.05
 
 **Recommendations**:
+
 - Use free tier credits for development
 - Analyze documents on-demand vs. automatic
 - Cache summaries and tags
@@ -405,13 +435,15 @@ On document detail pages:
 ### OpenAI API Issues
 
 **Problem**: "AI features not configured"
-**Solution**: 
+**Solution**:
+
 1. Get API key from https://platform.openai.com/api-keys
 2. Add to `.env`: `OPENAI_API_KEY=sk-...`
 3. Restart Flask app
 
 **Problem**: "Rate limit exceeded"
 **Solution**:
+
 - Wait and retry
 - Upgrade OpenAI plan
 - Implement request queuing
@@ -420,12 +452,14 @@ On document detail pages:
 
 **Problem**: "Tesseract OCR not found"
 **Solution**:
+
 1. Download from: https://github.com/UB-Mannheim/tesseract/wiki
 2. Install to `C:\Program Files\Tesseract-OCR\`
 3. Update `TESSERACT_CMD` in `.env`
 
 **Problem**: Poor OCR accuracy
 **Solution**:
+
 - Ensure high-quality scans
 - Use correct language setting
 - Preprocess images (contrast, brightness)
@@ -434,6 +468,7 @@ On document detail pages:
 
 **Problem**: No results found
 **Solution**:
+
 - Check if documents are analyzed
 - Run analysis: `POST /document/<id>/analyze`
 - Verify text extraction worked
@@ -550,15 +585,18 @@ On document detail pages:
 ## Quick Start
 
 1. **Set up OpenAI API**:
+
    ```bash
    export OPENAI_API_KEY=sk-your-key
    ```
 
 2. **Install Tesseract** (Windows):
+
    - Download from https://github.com/UB-Mannheim/tesseract/wiki
    - Install to default location
 
 3. **Run the app**:
+
    ```bash
    python app.py
    ```

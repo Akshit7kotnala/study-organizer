@@ -27,6 +27,7 @@ from azure.core.exceptions import AzureError
 from datetime import timedelta
 import openai
 from openai import OpenAI
+import google.generativeai as genai
 import PyPDF2
 import pytesseract
 from docx import Document as DocxDocument
@@ -122,14 +123,27 @@ if app.config['STORAGE_TYPE'] == 'azure' and app.config['AZURE_STORAGE_ACCOUNT_N
 # AI Configuration
 # ============================================================================
 
-# OpenAI Configuration
+# Google Gemini Configuration (FREE - Primary AI Provider)
+app.config['GEMINI_API_KEY'] = os.environ.get('GEMINI_API_KEY', '')
+gemini_model = None
+if app.config['GEMINI_API_KEY']:
+    try:
+        genai.configure(api_key=app.config['GEMINI_API_KEY'])
+        gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+        print(f"✓ Google Gemini AI initialized")
+    except Exception as e:
+        print(f"⚠ Failed to initialize Gemini: {e}")
+        gemini_model = None
+else:
+    print(f"⚠ Gemini API key not found - AI features will be disabled")
+
+# OpenAI Configuration (Deprecated - keeping for backward compatibility)
 app.config['OPENAI_API_KEY'] = os.environ.get('OPENAI_API_KEY', '')
-if app.config['OPENAI_API_KEY']:
+if app.config['OPENAI_API_KEY'] and app.config['OPENAI_API_KEY'] != 'your-openai-api-key-here':
     openai_client = OpenAI(api_key=app.config['OPENAI_API_KEY'])
-    print(f"✓ OpenAI client initialized")
+    print(f"✓ OpenAI client initialized (fallback)")
 else:
     openai_client = None
-    print(f"⚠ OpenAI API key not found - AI features will be disabled")
 
 # Tesseract OCR Configuration
 app.config['TESSERACT_CMD'] = os.environ.get('TESSERACT_CMD', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
@@ -417,6 +431,40 @@ class Notification(db.Model):
     
     def __repr__(self):
         return f'<Notification for User {self.user_id}>'
+
+
+class ChatSession(db.Model):
+    """Model for AI chat sessions with documents."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)  # Optional: chat about specific document
+    title = db.Column(db.String(256), default='New Chat')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='chat_sessions')
+    document = db.relationship('Document', backref='chat_sessions')
+    messages = db.relationship('ChatMessage', backref='session', lazy='dynamic', cascade='all, delete-orphan', order_by='ChatMessage.created_at')
+    
+    def __repr__(self):
+        return f'<ChatSession {self.id} - {self.title}>'
+    
+    def message_count(self):
+        """Return the number of messages in this session."""
+        return self.messages.count()
+
+
+class ChatMessage(db.Model):
+    """Model for individual messages in a chat session."""
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('chat_session.id'), nullable=False)
+    role = db.Column(db.String(16), nullable=False)  # 'user' or 'assistant'
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ChatMessage {self.id} - {self.role}>'
 
 
 @login_manager.user_loader
@@ -957,38 +1005,55 @@ def extract_text_from_document(file_path, mimetype):
 
 
 def generate_summary(text, max_length=None):
-    """Generate AI summary of text using OpenAI."""
-    if not openai_client or not text:
+    """Generate AI summary of text using Google Gemini."""
+    if not gemini_model and not openai_client:
+        return None
+    
+    if not text:
         return None
     
     if max_length is None:
         max_length = app.config['AI_SUMMARY_MAX_LENGTH']
     
     try:
-        # Truncate text if too long (OpenAI has token limits)
-        max_input_chars = 12000  # ~3000 tokens
+        # Truncate text if too long
+        max_input_chars = 12000
         if len(text) > max_input_chars:
             text = text[:max_input_chars] + "..."
         
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that summarizes academic documents concisely."},
-                {"role": "user", "content": f"Summarize the following document in {max_length} characters or less:\n\n{text}"}
-            ],
-            max_tokens=200,
-            temperature=0.5
-        )
+        # Try Gemini first (free)
+        if gemini_model:
+            try:
+                prompt = f"Summarize the following academic document in {max_length} characters or less. Be concise and focus on key points:\n\n{text}"
+                response = gemini_model.generate_content(prompt)
+                summary = response.text.strip()
+                return summary[:max_length]
+            except Exception as e:
+                print(f"Gemini summary error: {e}")
+                # Fall through to OpenAI if available
         
-        summary = response.choices[0].message.content.strip()
-        return summary[:max_length]
+        # Fallback to OpenAI if Gemini fails
+        if openai_client:
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that summarizes academic documents concisely."},
+                    {"role": "user", "content": f"Summarize the following document in {max_length} characters or less:\n\n{text}"}
+                ],
+                max_tokens=200,
+                temperature=0.5
+            )
+            summary = response.choices[0].message.content.strip()
+            return summary[:max_length]
+        
+        return None
     except Exception as e:
         print(f"Error generating summary: {e}")
         return None
 
 
 def generate_smart_tags(text, subject=None):
-    """Generate smart tags using OpenAI and NLP."""
+    """Generate smart tags using Google Gemini and NLP."""
     if not text:
         return []
     
@@ -1008,8 +1073,8 @@ def generate_smart_tags(text, subject=None):
     except:
         pass
     
-    # Method 2: Use OpenAI for better tags
-    if openai_client and len(text) > 50:
+    # Method 2: Use Gemini for better tags (free)
+    if gemini_model and len(text) > 50:
         try:
             # Truncate text if too long
             max_input_chars = 6000
@@ -1019,24 +1084,38 @@ def generate_smart_tags(text, subject=None):
             prompt = f"Extract {app.config['AI_TAGS_COUNT']} relevant keywords/tags from this academic document."
             if subject:
                 prompt += f" Subject: {subject}."
-            prompt += f"\n\nDocument:\n{text}\n\nProvide only the tags, comma-separated:"
+            prompt += f"\n\nDocument:\n{text}\n\nProvide only the tags, comma-separated, lowercase:"
             
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that extracts relevant keywords from academic content."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=50,
-                temperature=0.3
-            )
-            
-            ai_tags = response.choices[0].message.content.strip()
+            response = gemini_model.generate_content(prompt)
+            ai_tags = response.text.strip()
             # Parse comma-separated tags
-            ai_tags_list = [tag.strip() for tag in ai_tags.split(',') if tag.strip()]
+            ai_tags_list = [tag.strip().lower() for tag in ai_tags.split(',') if tag.strip()]
             tags.extend(ai_tags_list)
         except Exception as e:
-            print(f"Error generating AI tags: {e}")
+            print(f"Gemini tags error: {e}")
+            # Try OpenAI fallback
+            if openai_client:
+                try:
+                    prompt = f"Extract {app.config['AI_TAGS_COUNT']} relevant keywords/tags from this academic document."
+                    if subject:
+                        prompt += f" Subject: {subject}."
+                    prompt += f"\n\nDocument:\n{text}\n\nProvide only the tags, comma-separated:"
+                    
+                    response = openai_client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant that extracts relevant keywords from academic content."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        max_tokens=50,
+                        temperature=0.3
+                    )
+                    
+                    ai_tags = response.choices[0].message.content.strip()
+                    ai_tags_list = [tag.strip() for tag in ai_tags.split(',') if tag.strip()]
+                    tags.extend(ai_tags_list)
+                except Exception as e2:
+                    print(f"Error generating AI tags: {e2}")
     
     # Remove duplicates and limit count
     tags = list(dict.fromkeys(tags))  # Preserve order while removing duplicates
@@ -2400,7 +2479,7 @@ def analyze_document_route(doc_id):
     """Trigger AI analysis for a document."""
     document = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
     
-    if not openai_client:
+    if not gemini_model and not openai_client:
         return jsonify({'success': False, 'error': 'AI features not configured'}), 400
     
     # Run analysis in the request (in production, use background task)
@@ -2545,15 +2624,351 @@ def ai_features_page():
     analyzed_docs = Document.query.filter_by(user_id=current_user.id).filter(Document.extracted_text.isnot(None)).count()
     summarized_docs = Document.query.filter_by(user_id=current_user.id).filter(Document.summary.isnot(None)).count()
     
+    # Get the actual analyzed documents with summaries
+    analyzed_documents = Document.query.filter_by(user_id=current_user.id).filter(
+        Document.summary.isnot(None)
+    ).order_by(Document.last_analyzed.desc()).limit(6).all()
+    
     stats = {
         'total_documents': total_docs,
         'analyzed_documents': analyzed_docs,
         'summarized_documents': summarized_docs,
-        'ai_enabled': openai_client is not None,
+        'ai_enabled': gemini_model is not None or openai_client is not None,
         'ocr_enabled': os.path.exists(app.config['TESSERACT_CMD'])
     }
     
-    return render_template('ai_features.html', stats=stats)
+    return render_template('ai_features.html', stats=stats, analyzed_docs=analyzed_documents)
+
+
+# ============================================================================
+# AI STUDY ASSISTANT CHATBOT ROUTES
+# ============================================================================
+
+@app.route('/chat')
+@login_required
+def chat_index():
+    """Main chat interface - shows all chat sessions."""
+    sessions = ChatSession.query.filter_by(user_id=current_user.id).order_by(ChatSession.updated_at.desc()).all()
+    return render_template('chat/index.html', sessions=sessions)
+
+
+@app.route('/chat/new', methods=['POST'])
+@login_required
+def chat_new():
+    """Create a new chat session."""
+    data = request.get_json()
+    document_id = data.get('document_id')
+    title = data.get('title', 'New Chat')
+    
+    # Validate document if provided
+    document = None
+    if document_id:
+        document = Document.query.filter_by(id=document_id, user_id=current_user.id).first()
+        if not document:
+            return jsonify({'success': False, 'error': 'Document not found'}), 404
+        title = f"Chat about {document.original_filename}"
+    
+    # Create new session
+    session = ChatSession(
+        user_id=current_user.id,
+        document_id=document_id,
+        title=title
+    )
+    db.session.add(session)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'session_id': session.id,
+        'title': session.title,
+        'redirect_url': url_for('chat_session', session_id=session.id)
+    })
+
+
+@app.route('/chat/<int:session_id>')
+@login_required
+def chat_session(session_id):
+    """View a specific chat session."""
+    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first_or_404()
+    messages = session.messages.all()
+    
+    # Get document context if available
+    document = session.document if session.document_id else None
+    
+    return render_template('chat/session.html', 
+                         session=session, 
+                         messages=messages,
+                         document=document)
+
+
+@app.route('/chat/<int:session_id>/message', methods=['POST'])
+@login_required
+def chat_send_message(session_id):
+    """Send a message in a chat session and get AI response."""
+    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first_or_404()
+    
+    data = request.get_json()
+    user_message = data.get('message', '').strip()
+    
+    if not user_message:
+        return jsonify({'success': False, 'error': 'Message cannot be empty'}), 400
+    
+    # Save user message
+    user_msg = ChatMessage(
+        session_id=session.id,
+        role='user',
+        content=user_message
+    )
+    db.session.add(user_msg)
+    
+    # Generate AI response
+    try:
+        # Build context from document if available
+        context = ""
+        if session.document:
+            doc = session.document
+            context = f"""Document Context:
+Filename: {doc.original_filename}
+Subject: {doc.subject}
+Year: {doc.year}
+"""
+            if doc.summary:
+                context += f"Summary: {doc.summary}\n"
+            if doc.extracted_text:
+                # Use first 3000 characters of extracted text
+                context += f"\nDocument Content (excerpt):\n{doc.extracted_text[:3000]}...\n"
+        
+        # Get conversation history
+        previous_messages = session.messages.order_by(ChatMessage.created_at).all()
+        conversation_history = []
+        for msg in previous_messages[-10:]:  # Last 10 messages for context
+            conversation_history.append({
+                'role': msg.role,
+                'parts': [msg.content]
+            })
+        
+        # Add current user message
+        conversation_history.append({
+            'role': 'user',
+            'parts': [user_message]
+        })
+        
+        # Call Gemini API
+        if gemini_model:
+            system_prompt = f"""You are an AI Study Assistant helping students understand their documents and study materials.
+You are helpful, friendly, and focused on education.
+
+{context}
+
+Answer the student's questions based on the document context provided. If asked to generate quizzes, create multiple-choice questions. If asked for study plans, provide structured schedules."""
+            
+            chat = gemini_model.start_chat(history=conversation_history[:-1])
+            response = chat.send_message(user_message)
+            ai_response = response.text
+        else:
+            ai_response = "AI is not configured. Please set up Gemini API key in .env file."
+        
+        # Save AI response
+        ai_msg = ChatMessage(
+            session_id=session.id,
+            role='assistant',
+            content=ai_response
+        )
+        db.session.add(ai_msg)
+        
+        # Update session timestamp
+        session.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'user_message': {
+                'id': user_msg.id,
+                'content': user_msg.content,
+                'created_at': user_msg.created_at.isoformat()
+            },
+            'ai_message': {
+                'id': ai_msg.id,
+                'content': ai_msg.content,
+                'created_at': ai_msg.created_at.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/chat/<int:session_id>/delete', methods=['POST'])
+@login_required
+def chat_delete(session_id):
+    """Delete a chat session."""
+    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first_or_404()
+    db.session.delete(session)
+    db.session.commit()
+    flash('Chat session deleted successfully', 'success')
+    return redirect(url_for('chat_index'))
+
+
+@app.route('/chat/quiz/generate', methods=['POST'])
+@login_required
+def generate_quiz():
+    """Generate quiz questions from a document using AI."""
+    data = request.get_json()
+    document_id = data.get('document_id')
+    num_questions = data.get('num_questions', 5)
+    difficulty = data.get('difficulty', 'medium')  # easy, medium, hard
+    
+    if not document_id:
+        return jsonify({'success': False, 'error': 'Document ID required'}), 400
+    
+    document = Document.query.filter_by(id=document_id, user_id=current_user.id).first()
+    if not document:
+        return jsonify({'success': False, 'error': 'Document not found'}), 404
+    
+    if not document.extracted_text:
+        return jsonify({'success': False, 'error': 'Document has no extracted text. Please analyze it first.'}), 400
+    
+    try:
+        if gemini_model:
+            prompt = f"""Based on the following document content, generate {num_questions} multiple-choice questions at {difficulty} difficulty level.
+
+Document: {document.original_filename}
+Subject: {document.subject}
+
+Content:
+{document.extracted_text[:4000]}
+
+Generate questions in this exact JSON format:
+{{
+  "questions": [
+    {{
+      "question": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct_answer": 0,
+      "explanation": "Why this answer is correct"
+    }}
+  ]
+}}
+
+Make the questions educational and test real understanding, not just memorization."""
+            
+            response = gemini_model.generate_content(prompt)
+            quiz_text = response.text
+            
+            # Try to extract JSON from response
+            import json
+            import re
+            
+            # Find JSON in response
+            json_match = re.search(r'\{[\s\S]*\}', quiz_text)
+            if json_match:
+                quiz_data = json.loads(json_match.group())
+            else:
+                # If no JSON found, return raw text
+                return jsonify({
+                    'success': True,
+                    'raw_response': quiz_text
+                })
+            
+            return jsonify({
+                'success': True,
+                'quiz': quiz_data,
+                'document': {
+                    'id': document.id,
+                    'filename': document.original_filename
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': 'AI not configured'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/chat/study-plan/generate', methods=['POST'])
+@login_required
+def generate_study_plan():
+    """Generate a personalized study plan based on user's documents."""
+    data = request.get_json()
+    goal = data.get('goal', 'General study improvement')
+    duration_days = data.get('duration_days', 7)
+    hours_per_day = data.get('hours_per_day', 2)
+    
+    # Get user's documents
+    documents = Document.query.filter_by(user_id=current_user.id).order_by(Document.upload_date.desc()).limit(20).all()
+    
+    if not documents:
+        return jsonify({'success': False, 'error': 'No documents found. Upload some study materials first.'}), 400
+    
+    try:
+        if gemini_model:
+            # Build document list
+            doc_list = ""
+            for doc in documents:
+                doc_list += f"- {doc.original_filename} (Subject: {doc.subject}, Year: {doc.year})\n"
+                if doc.summary:
+                    doc_list += f"  Summary: {doc.summary[:200]}...\n"
+            
+            prompt = f"""Create a personalized {duration_days}-day study plan for a student with the following goal: {goal}
+
+Study Schedule:
+- Duration: {duration_days} days
+- Study time per day: {hours_per_day} hours
+
+Available Study Materials:
+{doc_list}
+
+Generate a structured study plan in JSON format:
+{{
+  "title": "Your Study Plan Title",
+  "overview": "Brief overview paragraph",
+  "daily_schedule": [
+    {{
+      "day": 1,
+      "focus": "Topic/Subject",
+      "tasks": [
+        "Task 1 description",
+        "Task 2 description"
+      ],
+      "documents": ["filename1.pdf", "filename2.pdf"],
+      "estimated_hours": 2
+    }}
+  ],
+  "tips": [
+    "Study tip 1",
+    "Study tip 2"
+  ]
+}}
+
+Make it realistic, achievable, and motivating!"""
+            
+            response = gemini_model.generate_content(prompt)
+            plan_text = response.text
+            
+            # Try to extract JSON
+            import json
+            import re
+            
+            json_match = re.search(r'\{[\s\S]*\}', plan_text)
+            if json_match:
+                plan_data = json.loads(json_match.group())
+            else:
+                return jsonify({
+                    'success': True,
+                    'raw_response': plan_text
+                })
+            
+            return jsonify({
+                'success': True,
+                'study_plan': plan_data
+            })
+        else:
+            return jsonify({'success': False, 'error': 'AI not configured'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ endblock %} {% block content %}
       {% if not stats['ai_enabled'] %}
       <div class="alert alert-warning d-inline-block">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        OpenAI API key not configured. Some features may be limited.
+        AI API key not configured. Some features may be limited.
       </div>
       {% endif %}
     </div>
@@ -28,7 +28,7 @@ endblock %} {% block content %}
           <div class="stat-icon mb-3">
             <i class="bi bi-files"></i>
           </div>
-          <h2 class="display-4 fw-bold text-gradient-primary">
+          <h2 class="display-4 fw-bold" style="color: #667eea;">
             {{ stats['total_documents'] }}
           </h2>
           <p class="text-muted mb-0">Total Documents</p>
@@ -42,7 +42,7 @@ endblock %} {% block content %}
           <div class="stat-icon mb-3">
             <i class="bi bi-search"></i>
           </div>
-          <h2 class="display-4 fw-bold text-gradient-success">
+          <h2 class="display-4 fw-bold" style="color: #48bb78;">
             {{ stats['analyzed_documents'] }}
           </h2>
           <p class="text-muted mb-0">Analyzed</p>
@@ -56,7 +56,7 @@ endblock %} {% block content %}
           <div class="stat-icon mb-3">
             <i class="bi bi-card-text"></i>
           </div>
-          <h2 class="display-4 fw-bold text-gradient-info">
+          <h2 class="display-4 fw-bold" style="color: #4299e1;">
             {{ stats['summarized_documents'] }}
           </h2>
           <p class="text-muted mb-0">Summarized</p>
@@ -70,7 +70,7 @@ endblock %} {% block content %}
           <div class="stat-icon mb-3">
             <i class="bi bi-lightning-charge"></i>
           </div>
-          <h2 class="display-4 fw-bold text-gradient-warning">
+          <h2 class="display-4 fw-bold" style="color: #ed8936;">
             {% if stats['total_documents'] > 0 %} {{
             ((stats['analyzed_documents'] / stats['total_documents']) * 100) |
             int }}% {% else %} 0% {% endif %}
@@ -80,6 +80,79 @@ endblock %} {% block content %}
       </div>
     </div>
   </div>
+
+  <!-- Analyzed Documents Section -->
+  {% if analyzed_docs %}
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="section-header text-center mb-4">
+        <h2 class="display-6 fw-bold mb-3">Your Analyzed Documents</h2>
+        <p class="lead text-muted">View AI-generated summaries and smart tags</p>
+      </div>
+
+      <div class="row g-4">
+        {% for doc in analyzed_docs %}
+        <div class="col-md-6">
+          <div class="card shadow-hover h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-start mb-3">
+                <div class="stat-icon me-3" style="width: 48px; height: 48px;">
+                  <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <h5 class="card-title mb-1">{{ doc.title }}</h5>
+                  <small class="text-muted">
+                    <i class="bi bi-clock"></i> Analyzed {{ doc.last_analyzed.strftime('%B %d, %Y') if doc.last_analyzed else 'Recently' }}
+                  </small>
+                </div>
+              </div>
+
+              {% if doc.summary %}
+              <div class="mb-3">
+                <h6 class="text-primary mb-2">
+                  <i class="bi bi-card-text"></i> AI Summary
+                </h6>
+                <p class="text-muted small mb-0">{{ doc.summary }}</p>
+              </div>
+              {% endif %}
+
+              {% if doc.ai_tags %}
+              <div class="mb-3">
+                <h6 class="text-success mb-2">
+                  <i class="bi bi-tags"></i> Smart Tags
+                </h6>
+                <div class="d-flex flex-wrap gap-2">
+                  {% for tag in doc.ai_tags.split(',')[:5] %}
+                  <span class="badge bg-primary">{{ tag.strip() }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                <a href="{{ url_for('edit_document', doc_id=doc.id) }}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye"></i> View Details
+                </a>
+                <small class="text-muted">
+                  {{ doc.extracted_text|length if doc.extracted_text else 0 }} characters extracted
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if analyzed_docs|length > 4 %}
+      <div class="text-center mt-4">
+        <a href="{{ url_for('documents') }}" class="btn btn-primary">
+          View All Documents <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Features Grid -->
   <div class="features-section mb-5">
@@ -321,7 +394,7 @@ endblock %} {% block content %}
 
     <div class="timeline">
       <div class="timeline-item">
-        <div class="timeline-icon bg-gradient-primary">
+        <div class="timeline-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
           <i class="bi bi-upload"></i>
         </div>
         <div class="timeline-content">
@@ -333,7 +406,7 @@ endblock %} {% block content %}
       </div>
 
       <div class="timeline-item">
-        <div class="timeline-icon bg-gradient-success">
+        <div class="timeline-icon" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
           <i class="bi bi-cpu"></i>
         </div>
         <div class="timeline-content">
@@ -345,7 +418,7 @@ endblock %} {% block content %}
       </div>
 
       <div class="timeline-item">
-        <div class="timeline-icon bg-gradient-info">
+        <div class="timeline-icon" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);">
           <i class="bi bi-stars"></i>
         </div>
         <div class="timeline-content">
@@ -357,7 +430,7 @@ endblock %} {% block content %}
       </div>
 
       <div class="timeline-item">
-        <div class="timeline-icon bg-gradient-warning">
+        <div class="timeline-icon" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
           <i class="bi bi-search-heart"></i>
         </div>
         <div class="timeline-content">
@@ -422,6 +495,8 @@ endblock %} {% block content %}
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #667eea; /* Fallback color */
   }
 
   .text-gradient-success {
@@ -432,6 +507,8 @@ endblock %} {% block content %}
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #48bb78; /* Fallback color */
   }
 
   .text-gradient-info {
@@ -442,6 +519,8 @@ endblock %} {% block content %}
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #4299e1; /* Fallback color */
   }
 
   .text-gradient-warning {
@@ -452,6 +531,8 @@ endblock %} {% block content %}
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #ed8936; /* Fallback color */
   }
 
   .feature-card {
