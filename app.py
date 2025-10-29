@@ -278,6 +278,11 @@ class Document(db.Model):
     content_vector = db.Column(db.Text, nullable=True)  # TF-IDF vector for recommendations (JSON)
     last_analyzed = db.Column(db.DateTime, nullable=True)  # Last AI analysis timestamp
     
+    # Analytics tracking
+    view_count = db.Column(db.Integer, default=0)  # Number of times document was viewed
+    last_accessed = db.Column(db.DateTime, nullable=True)  # Last time document was accessed
+    download_count = db.Column(db.Integer, default=0)  # Number of times downloaded
+    
     # Many-to-many relationship with Tag
     tag_objects = db.relationship('Tag', secondary=document_tags, back_populates='documents')
 
@@ -465,6 +470,23 @@ class ChatMessage(db.Model):
     
     def __repr__(self):
         return f'<ChatMessage {self.id} - {self.role}>'
+
+
+class ActivityLog(db.Model):
+    """Model for tracking user activity for analytics."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    activity_type = db.Column(db.String(64), nullable=False)  # 'view', 'upload', 'download', 'chat', 'quiz', 'analysis'
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)  # Related document if applicable
+    meta_data = db.Column(db.Text, nullable=True)  # JSON data for additional info
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    user = db.relationship('User', backref='activity_logs')
+    document = db.relationship('Document', backref='activity_logs')
+    
+    def __repr__(self):
+        return f'<ActivityLog {self.activity_type} by User {self.user_id}>'
 
 
 @login_manager.user_loader
@@ -1334,6 +1356,10 @@ def upload():
             doc.set_tags_from_string(tags)
             db.session.add(doc)
             db.session.commit()
+            
+            # Log upload activity
+            log_activity('upload', document_id=doc.id)
+            
             flash('File uploaded successfully', 'success')
             return redirect(url_for('year_view', year=year_int))
 
@@ -1452,6 +1478,9 @@ def upload_multiple():
             doc.set_tags_from_string(tags)
             db.session.add(doc)
             db.session.commit()
+            
+            # Log upload activity
+            log_activity('upload', document_id=doc.id)
             
             result['success'] = True
             success_count += 1
@@ -1671,6 +1700,11 @@ def tag_view(slug):
 def download(doc_id: int):
     doc = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
     
+    # Track download
+    doc.download_count = (doc.download_count or 0) + 1
+    db.session.commit()
+    log_activity('download', document_id=doc_id)
+    
     # If file is in S3, generate presigned URL and redirect
     if doc.storage_type == 's3':
         s3_key = f"documents/{doc.stored_filename}"
@@ -1699,6 +1733,13 @@ def download(doc_id: int):
 @login_required
 def preview(doc_id: int):
     doc = Document.query.filter_by(id=doc_id, user_id=current_user.id).first_or_404()
+    
+    # Track view
+    doc.view_count = (doc.view_count or 0) + 1
+    doc.last_accessed = datetime.utcnow()
+    db.session.commit()
+    log_activity('view', document_id=doc_id)
+    
     previewable = False
     view_type = 'other'
     text_content = None
@@ -2486,6 +2527,9 @@ def analyze_document_route(doc_id):
     success = analyze_document(doc_id)
     
     if success:
+        # Log analysis activity
+        log_activity('analysis', document_id=doc_id)
+        
         return jsonify({
             'success': True,
             'summary': document.summary,
@@ -2781,6 +2825,9 @@ Answer the student's questions based on the document context provided. If asked 
         
         db.session.commit()
         
+        # Log chat activity
+        log_activity('chat', document_id=session.document_id if session.document_id else None)
+        
         return jsonify({
             'success': True,
             'user_message': {
@@ -2872,6 +2919,9 @@ Make the questions educational and test real understanding, not just memorizatio
                     'raw_response': quiz_text
                 })
             
+            # Log quiz activity
+            log_activity('quiz', document_id=document_id)
+            
             return jsonify({
                 'success': True,
                 'quiz': quiz_data,
@@ -2902,16 +2952,18 @@ def generate_study_plan():
     if not documents:
         return jsonify({'success': False, 'error': 'No documents found. Upload some study materials first.'}), 400
     
+    if not gemini_model:
+        return jsonify({'success': False, 'error': 'AI not configured'}), 500
+    
     try:
-        if gemini_model:
-            # Build document list
-            doc_list = ""
-            for doc in documents:
-                doc_list += f"- {doc.original_filename} (Subject: {doc.subject}, Year: {doc.year})\n"
-                if doc.summary:
-                    doc_list += f"  Summary: {doc.summary[:200]}...\n"
-            
-            prompt = f"""Create a personalized {duration_days}-day study plan for a student with the following goal: {goal}
+        # Build document list
+        doc_list = ""
+        for doc in documents:
+            doc_list += f"- {doc.original_filename} (Subject: {doc.subject}, Year: {doc.year})\n"
+            if doc.summary:
+                doc_list += f"  Summary: {doc.summary[:200]}...\n"
+        
+        prompt = f"""Create a personalized {duration_days}-day study plan for a student with the following goal: {goal}
 
 Study Schedule:
 - Duration: {duration_days} days
@@ -2943,35 +2995,305 @@ Generate a structured study plan in JSON format:
 }}
 
 Make it realistic, achievable, and motivating!"""
-            
-            response = gemini_model.generate_content(prompt)
-            plan_text = response.text
-            
-            # Try to extract JSON
-            import json
-            import re
-            
-            json_match = re.search(r'\{[\s\S]*\}', plan_text)
-            if json_match:
-                plan_data = json.loads(json_match.group())
-            else:
-                return jsonify({
-                    'success': True,
-                    'raw_response': plan_text
-                })
-            
+        
+        response = gemini_model.generate_content(prompt)
+        plan_text = response.text
+        
+        # Try to extract JSON
+        import json
+        import re
+        
+        json_match = re.search(r'\{[\s\S]*\}', plan_text)
+        if json_match:
+            plan_data = json.loads(json_match.group())
+        else:
             return jsonify({
                 'success': True,
-                'study_plan': plan_data
+                'raw_response': plan_text
             })
-        else:
-            return jsonify({'success': False, 'error': 'AI not configured'}), 500
-            
+        
+        return jsonify({
+            'success': True,
+            'plan': plan_data
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== Analytics Routes ====================
+
+@app.route('/analytics')
+@login_required
+def analytics_dashboard():
+    """Main analytics dashboard page."""
+    return render_template('analytics/dashboard.html')
+
+
+@app.route('/api/analytics/overview')
+@login_required
+def analytics_overview():
+    """Get overview statistics for the dashboard."""
+    try:
+        from sqlalchemy import func
+        
+        # Total documents
+        total_docs = Document.query.filter_by(user_id=current_user.id).count()
+        
+        # Total views
+        total_views = db.session.query(func.sum(Document.view_count)).filter_by(user_id=current_user.id).scalar() or 0
+        
+        # Total AI analyses
+        total_analyses = Document.query.filter_by(user_id=current_user.id).filter(Document.summary != None).count()
+        
+        # Total chat sessions
+        total_chats = ChatSession.query.filter_by(user_id=current_user.id).count()
+        
+        # Study streak (days with activity)
+        from datetime import datetime, timedelta
+        today = datetime.utcnow().date()
+        streak = 0
+        check_date = today
+        
+        while True:
+            day_start = datetime.combine(check_date, datetime.min.time())
+            day_end = datetime.combine(check_date, datetime.max.time())
+            
+            activity = ActivityLog.query.filter(
+                ActivityLog.user_id == current_user.id,
+                ActivityLog.created_at >= day_start,
+                ActivityLog.created_at <= day_end
+            ).first()
+            
+            if activity:
+                streak += 1
+                check_date -= timedelta(days=1)
+            else:
+                break
+            
+            # Safety limit
+            if streak > 365:
+                break
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'total_documents': total_docs,
+                'total_views': int(total_views),
+                'total_analyses': total_analyses,
+                'total_chats': total_chats,
+                'study_streak': streak
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/activity-heatmap')
+@login_required
+def analytics_activity_heatmap():
+    """Get activity data for heatmap (last 90 days)."""
+    try:
+        from datetime import datetime, timedelta
+        from collections import defaultdict
+        
+        # Get last 90 days of activity
+        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+        
+        activities = ActivityLog.query.filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.created_at >= ninety_days_ago
+        ).all()
+        
+        # Group by date
+        activity_by_date = defaultdict(int)
+        for activity in activities:
+            date_str = activity.created_at.strftime('%Y-%m-%d')
+            activity_by_date[date_str] += 1
+        
+        # Convert to list for frontend
+        heatmap_data = [{'date': date, 'count': count} for date, count in activity_by_date.items()]
+        
+        return jsonify({
+            'success': True,
+            'data': heatmap_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/documents-usage')
+@login_required
+def analytics_documents_usage():
+    """Get top documents by views."""
+    try:
+        # Get top 10 most viewed documents
+        top_docs = Document.query.filter_by(user_id=current_user.id)\
+            .order_by(Document.view_count.desc())\
+            .limit(10)\
+            .all()
+        
+        docs_data = [{
+            'id': doc.id,
+            'filename': doc.filename,
+            'views': doc.view_count,
+            'downloads': doc.download_count,
+            'subject': doc.subject or 'Uncategorized'
+        } for doc in top_docs]
+        
+        return jsonify({
+            'success': True,
+            'data': docs_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/subjects-breakdown')
+@login_required
+def analytics_subjects_breakdown():
+    """Get document distribution by subject."""
+    try:
+        from sqlalchemy import func
+        
+        # Group documents by subject
+        subjects = db.session.query(
+            Document.subject,
+            func.count(Document.id).label('count')
+        ).filter_by(user_id=current_user.id)\
+         .group_by(Document.subject)\
+         .all()
+        
+        subjects_data = [{
+            'subject': subj or 'Uncategorized',
+            'count': count
+        } for subj, count in subjects]
+        
+        return jsonify({
+            'success': True,
+            'data': subjects_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/ai-usage')
+@login_required
+def analytics_ai_usage():
+    """Get AI feature usage statistics."""
+    try:
+        from datetime import datetime, timedelta
+        
+        # Last 30 days
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        
+        # Count by activity type
+        ai_activities = db.session.query(
+            ActivityLog.activity_type,
+            db.func.count(ActivityLog.id).label('count')
+        ).filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.created_at >= thirty_days_ago,
+            ActivityLog.activity_type.in_(['analysis', 'chat', 'quiz'])
+        ).group_by(ActivityLog.activity_type).all()
+        
+        ai_data = {
+            'analysis': 0,
+            'chat': 0,
+            'quiz': 0
+        }
+        
+        for activity_type, count in ai_activities:
+            ai_data[activity_type] = count
+        
+        return jsonify({
+            'success': True,
+            'data': ai_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/activity-timeline')
+@login_required
+def analytics_activity_timeline():
+    """Get activity timeline for the last 30 days."""
+    try:
+        from datetime import datetime, timedelta
+        from collections import defaultdict
+        
+        # Last 30 days
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        
+        activities = ActivityLog.query.filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.created_at >= thirty_days_ago
+        ).all()
+        
+        # Group by date
+        timeline = defaultdict(lambda: {
+            'view': 0,
+            'upload': 0,
+            'download': 0,
+            'chat': 0,
+            'analysis': 0,
+            'quiz': 0
+        })
+        
+        for activity in activities:
+            date_str = activity.created_at.strftime('%Y-%m-%d')
+            activity_type = activity.activity_type
+            if activity_type in timeline[date_str]:
+                timeline[date_str][activity_type] += 1
+        
+        # Convert to list sorted by date
+        timeline_data = []
+        for i in range(30):
+            date = (datetime.utcnow() - timedelta(days=29-i)).strftime('%Y-%m-%d')
+            if date in timeline:
+                timeline_data.append({
+                    'date': date,
+                    **timeline[date]
+                })
+            else:
+                timeline_data.append({
+                    'date': date,
+                    'view': 0,
+                    'upload': 0,
+                    'download': 0,
+                    'chat': 0,
+                    'analysis': 0,
+                    'quiz': 0
+                })
+        
+        return jsonify({
+            'success': True,
+            'data': timeline_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Helper function to log activity
+def log_activity(activity_type, document_id=None, meta_data=None):
+    """Helper function to log user activity."""
+    try:
+        if current_user.is_authenticated:
+            activity = ActivityLog(
+                user_id=current_user.id,
+                activity_type=activity_type,
+                document_id=document_id,
+                meta_data=meta_data
+            )
+            db.session.add(activity)
+            db.session.commit()
+    except Exception as e:
+        print(f"Error logging activity: {e}")
+        db.session.rollback()
 
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
+

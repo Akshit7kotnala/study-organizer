@@ -1,0 +1,610 @@
+{% extends "base.html" %} {% block title %}Analytics Dashboard - Study
+Organiser{% endblock %} {% block extra_css %}
+<style>
+  .analytics-container {
+    padding: 2rem 0;
+  }
+
+  .stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .stats-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .stats-card.blue {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .stats-card.green {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  }
+
+  .stats-card.orange {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  .stats-card.purple {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+
+  .stats-card.fire {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  }
+
+  .stats-number {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+  }
+
+  .stats-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .stats-icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+  }
+
+  .chart-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .chart-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .heatmap-container {
+    overflow-x: auto;
+    padding: 1rem 0;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 4px;
+    min-width: 700px;
+  }
+
+  .heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: #edf2f7;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .heatmap-cell:hover {
+    transform: scale(1.2);
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .heatmap-cell[data-level="1"] {
+    background: #c6f6d5;
+  }
+  .heatmap-cell[data-level="2"] {
+    background: #9ae6b4;
+  }
+  .heatmap-cell[data-level="3"] {
+    background: #68d391;
+  }
+  .heatmap-cell[data-level="4"] {
+    background: #48bb78;
+  }
+  .heatmap-cell[data-level="5"] {
+    background: #38a169;
+  }
+
+  .streak-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.2);
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .loading-spinner {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #a0aec0;
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .stats-number {
+      font-size: 2rem;
+    }
+
+    .chart-card {
+      padding: 1rem;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="analytics-container">
+  <div class="container">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="mb-2">
+          <i class="bi bi-graph-up-arrow"></i> Analytics Dashboard
+        </h1>
+        <p class="text-muted">Track your study progress and insights</p>
+      </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="row" id="statsContainer">
+      <div class="col-md-4 col-lg-2">
+        <div class="stats-card blue">
+          <div class="stats-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <div class="stats-number" id="totalDocs">-</div>
+          <div class="stats-label">Documents</div>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2">
+        <div class="stats-card green">
+          <div class="stats-icon">
+            <i class="bi bi-eye"></i>
+          </div>
+          <div class="stats-number" id="totalViews">-</div>
+          <div class="stats-label">Views</div>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2">
+        <div class="stats-card orange">
+          <div class="stats-icon">
+            <i class="bi bi-robot"></i>
+          </div>
+          <div class="stats-number" id="totalAnalyses">-</div>
+          <div class="stats-label">AI Analyses</div>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2">
+        <div class="stats-card purple">
+          <div class="stats-icon">
+            <i class="bi bi-chat-dots"></i>
+          </div>
+          <div class="stats-number" id="totalChats">-</div>
+          <div class="stats-label">Chat Sessions</div>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-4">
+        <div class="stats-card fire">
+          <div class="stats-icon">
+            <i class="bi bi-fire"></i>
+          </div>
+          <div class="stats-number" id="studyStreak">-</div>
+          <div class="stats-label">Day Study Streak</div>
+          <div class="streak-badge" id="streakBadge">Keep it up! 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Heatmap -->
+    <div class="row">
+      <div class="col-12">
+        <div class="chart-card">
+          <div class="chart-title">
+            <i class="bi bi-calendar-week"></i>
+            Activity Heatmap (Last 90 Days)
+          </div>
+          <div class="heatmap-container">
+            <div id="heatmapGrid" class="heatmap-grid">
+              <div class="loading-spinner">
+                <div class="spinner-border text-primary"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="chart-card">
+          <div class="chart-title">
+            <i class="bi bi-bar-chart"></i>
+            Top Documents by Views
+          </div>
+          <canvas id="documentsChart"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="chart-card">
+          <div class="chart-title">
+            <i class="bi bi-pie-chart"></i>
+            Subject Distribution
+          </div>
+          <canvas id="subjectsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <div class="chart-title">
+            <i class="bi bi-stars"></i>
+            AI Feature Usage (Last 30 Days)
+          </div>
+          <canvas id="aiUsageChart"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <div class="chart-title">
+            <i class="bi bi-activity"></i>
+            Activity Timeline (Last 30 Days)
+          </div>
+          <canvas id="timelineChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Load all analytics data
+    loadOverviewStats();
+    loadActivityHeatmap();
+    loadDocumentsChart();
+    loadSubjectsChart();
+    loadAIUsageChart();
+    loadActivityTimeline();
+  });
+
+  // Load overview statistics
+  function loadOverviewStats() {
+    fetch("/api/analytics/overview")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          document.getElementById("totalDocs").textContent =
+            data.data.total_documents;
+          document.getElementById("totalViews").textContent =
+            data.data.total_views;
+          document.getElementById("totalAnalyses").textContent =
+            data.data.total_analyses;
+          document.getElementById("totalChats").textContent =
+            data.data.total_chats;
+          document.getElementById("studyStreak").textContent =
+            data.data.study_streak;
+
+          // Update streak badge
+          const streak = data.data.study_streak;
+          const badge = document.getElementById("streakBadge");
+          if (streak === 0) {
+            badge.textContent = "Start your streak today! 💪";
+          } else if (streak < 7) {
+            badge.textContent = `Keep it up! 🔥`;
+          } else if (streak < 30) {
+            badge.textContent = `You're on fire! 🔥🔥`;
+          } else {
+            badge.textContent = `Legend! 🏆🔥`;
+          }
+        }
+      })
+      .catch((error) => console.error("Error loading stats:", error));
+  }
+
+  // Load activity heatmap
+  function loadActivityHeatmap() {
+    fetch("/api/analytics/activity-heatmap")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const heatmapGrid = document.getElementById("heatmapGrid");
+          heatmapGrid.innerHTML = "";
+
+          if (data.data.length === 0) {
+            heatmapGrid.innerHTML =
+              '<div class="empty-state"><i class="bi bi-calendar-x"></i><p>No activity yet. Start studying to see your activity heatmap!</p></div>';
+            return;
+          }
+
+          // Create map of date -> count
+          const activityMap = {};
+          data.data.forEach((item) => {
+            activityMap[item.date] = item.count;
+          });
+
+          // Get max count for scaling
+          const maxCount = Math.max(...data.data.map((d) => d.count));
+
+          // Generate last 90 days
+          const today = new Date();
+          for (let i = 89; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split("T")[0];
+
+            const count = activityMap[dateStr] || 0;
+            const level =
+              count === 0 ? 0 : Math.min(Math.ceil((count / maxCount) * 5), 5);
+
+            const cell = document.createElement("div");
+            cell.className = "heatmap-cell";
+            cell.setAttribute("data-level", level);
+            cell.title = `${dateStr}: ${count} activities`;
+            heatmapGrid.appendChild(cell);
+          }
+        }
+      })
+      .catch((error) => console.error("Error loading heatmap:", error));
+  }
+
+  // Load documents usage chart
+  function loadDocumentsChart() {
+    fetch("/api/analytics/documents-usage")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const ctx = document
+            .getElementById("documentsChart")
+            .getContext("2d");
+
+          if (data.data.length === 0) {
+            ctx.canvas.parentElement.innerHTML =
+              '<div class="empty-state"><i class="bi bi-file-x"></i><p>No documents yet!</p></div>';
+            return;
+          }
+
+          new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.data.map(
+                (d) =>
+                  d.filename.substring(0, 20) +
+                  (d.filename.length > 20 ? "..." : "")
+              ),
+              datasets: [
+                {
+                  label: "Views",
+                  data: data.data.map((d) => d.views),
+                  backgroundColor: "rgba(102, 126, 234, 0.8)",
+                  borderColor: "rgba(102, 126, 234, 1)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                  },
+                },
+              },
+            },
+          });
+        }
+      })
+      .catch((error) => console.error("Error loading documents chart:", error));
+  }
+
+  // Load subjects breakdown chart
+  function loadSubjectsChart() {
+    fetch("/api/analytics/subjects-breakdown")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const ctx = document.getElementById("subjectsChart").getContext("2d");
+
+          if (data.data.length === 0) {
+            ctx.canvas.parentElement.innerHTML =
+              '<div class="empty-state"><i class="bi bi-pie-chart"></i><p>No subjects yet!</p></div>';
+            return;
+          }
+
+          const colors = [
+            "rgba(102, 126, 234, 0.8)",
+            "rgba(118, 75, 162, 0.8)",
+            "rgba(17, 153, 142, 0.8)",
+            "rgba(56, 239, 125, 0.8)",
+            "rgba(240, 147, 251, 0.8)",
+            "rgba(245, 87, 108, 0.8)",
+            "rgba(79, 172, 254, 0.8)",
+            "rgba(0, 242, 254, 0.8)",
+          ];
+
+          new Chart(ctx, {
+            type: "doughnut",
+            data: {
+              labels: data.data.map((d) => d.subject),
+              datasets: [
+                {
+                  data: data.data.map((d) => d.count),
+                  backgroundColor: colors,
+                  borderWidth: 2,
+                  borderColor: "#fff",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  position: "bottom",
+                },
+              },
+            },
+          });
+        }
+      })
+      .catch((error) => console.error("Error loading subjects chart:", error));
+  }
+
+  // Load AI usage chart
+  function loadAIUsageChart() {
+    fetch("/api/analytics/ai-usage")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const ctx = document.getElementById("aiUsageChart").getContext("2d");
+
+          new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: ["AI Analysis", "Chat Sessions", "Quiz Generated"],
+              datasets: [
+                {
+                  label: "Usage Count",
+                  data: [data.data.analysis, data.data.chat, data.data.quiz],
+                  backgroundColor: [
+                    "rgba(240, 147, 251, 0.8)",
+                    "rgba(79, 172, 254, 0.8)",
+                    "rgba(56, 239, 125, 0.8)",
+                  ],
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                  },
+                },
+              },
+            },
+          });
+        }
+      })
+      .catch((error) => console.error("Error loading AI usage chart:", error));
+  }
+
+  // Load activity timeline chart
+  function loadActivityTimeline() {
+    fetch("/api/analytics/activity-timeline")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const ctx = document.getElementById("timelineChart").getContext("2d");
+
+          new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: data.data.map((d) => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                });
+              }),
+              datasets: [
+                {
+                  label: "Views",
+                  data: data.data.map((d) => d.view),
+                  borderColor: "rgba(102, 126, 234, 1)",
+                  backgroundColor: "rgba(102, 126, 234, 0.1)",
+                  tension: 0.4,
+                },
+                {
+                  label: "Uploads",
+                  data: data.data.map((d) => d.upload),
+                  borderColor: "rgba(56, 239, 125, 1)",
+                  backgroundColor: "rgba(56, 239, 125, 0.1)",
+                  tension: 0.4,
+                },
+                {
+                  label: "AI Actions",
+                  data: data.data.map((d) => d.analysis + d.chat + d.quiz),
+                  borderColor: "rgba(240, 147, 251, 1)",
+                  backgroundColor: "rgba(240, 147, 251, 0.1)",
+                  tension: 0.4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              interaction: {
+                mode: "index",
+                intersect: false,
+              },
+              plugins: {
+                legend: {
+                  position: "bottom",
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                  },
+                },
+              },
+            },
+          });
+        }
+      })
+      .catch((error) => console.error("Error loading timeline:", error));
+  }
+</script>
+{% endblock %}
